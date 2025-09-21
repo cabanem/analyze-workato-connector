@@ -16,6 +16,11 @@
         "ms-python.vscode-pylance"
       ],
       "settings": {
+        "workbench.colorTheme": "GitHub Dark Default",
+        "workbench.iconTheme": "vs-minimal",
+        "editor.fontSize": 13,
+        "editor.fontFamily": "'Cascadia Code', 'Courier New', monospace",
+        "terminal.integrated.fontSize": 13,
         "python.defaultInterpreterPath": ".venv/bin/python",
         "python.linting.enabled": true,
         "python.linting.pylintEnabled": true,
