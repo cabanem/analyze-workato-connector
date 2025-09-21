@@ -3,55 +3,35 @@
   "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
   
   "features": {
-    "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "upgradePackages": true
-    },
-    "ghcr.io/devcontainers/features/python:1": {
-      "installTools": true,
-      "installJupyterlab": true,
-      "version": "3.12"
-    },
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "20"
-    }
+    "ghcr.io/devcontainers/features/git:1": {}
   },
   
-  "onCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
-  "postCreateCommand": "python -m venv .venv && . .venv/bin/activate && pip install --upgrade pip && [ -f requirements.txt ] && pip install -r requirements.txt || [ -f pyproject.toml ] && pip install -e . || true",
-  "postAttachCommand": ". .venv/bin/activate && [ -f manage.py ] && python manage.py runserver 0.0.0.0:8000 || [ -f app.py ] && python app.py || true",
+  "postCreateCommand": "python -m venv .venv && source .venv/bin/activate && pip install --upgrade pip && if [ -f requirements.txt ]; then pip install -r requirements.txt; fi",
   
   "customizations": {
     "vscode": {
       "extensions": [
         "anthropic.claude-code",
         "ms-python.python",
-        "ms-python.vscode-pylance",
-        "ms-toolsai.jupyter"
+        "ms-python.vscode-pylance"
       ],
       "settings": {
         "python.defaultInterpreterPath": ".venv/bin/python",
-        "python.formatting.provider": "autopep8",
         "python.linting.enabled": true,
         "python.linting.pylintEnabled": true,
         "editor.formatOnSave": true,
         "files.watcherExclude": {
-          "**/.venv/**": true,
           "**/__pycache__/**": true,
           "**/*.pyc": true,
-          "**/dist/**": true,
           "**/.pytest_cache/**": true
         }
       }
     }
   },
   
-  "forwardPorts": [8000, 8001, 5000, 5001, 8080, 8888, 3000],
+  "forwardPorts": [8000],
   
   "remoteEnv": {
-    "HISTFILE": "/commandhistory/.bash_history",
-    "PATH": "${containerWorkspaceFolder}/.venv/bin:${PATH}",
     "PYTHONDONTWRITEBYTECODE": "1"
   }
 }
