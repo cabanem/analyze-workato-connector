@@ -1,0 +1,15 @@
+[project]
+name = "your-project"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[tool.pylint.messages_control]
+disable = "C0111"  # Missing docstring
