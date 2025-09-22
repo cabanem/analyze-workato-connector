@@ -1,0 +1,138 @@
+Connector Analysis Report
+Generated: 2025-09-22 03:32:52
+============================================================
+
+File: connector.rb
+Lines: 5,279
+Components: 107
+
+Relationship Summary:
+----------------------------------------
+  action_calls_method: 58
+  method_calls_method: 40
+  object_def_uses_object_def: 28
+  action_uses_object_def: 23
+  object_def_uses_picklist: 11
+  action_uses_picklist: 5
+  picklist_calls_method: 3
+
+Component Inventory:
+----------------------------------------
+
+ACTIONS (18):
+  - ai_classify (7 deps) [4m,2o,1p]
+  - analyze_image (6 deps) [4m,2o]
+  - analyze_text (6 deps) [4m,2o]
+  - batch_fetch_drive_files (6 deps) [5m,1o] [API]
+  - draft_email (6 deps) [4m,2o]
+  - fetch_drive_file (6 deps) [5m,1o] [API]
+  - find_neighbors (6 deps) [4m,2o] [API]
+  - generate_embedding_single (3 deps) [1m,2p]
+  - generate_embeddings (3 deps) [1m,2p]
+  - get_prediction (2 deps) [2o] [API]
+  - list_drive_files (6 deps) [5m,1o] [API]
+  - monitor_drive_changes (2 deps) [2m] [API]
+  - parse_text (8 deps) [6m,2o]
+  - send_messages (5 deps) [3m,2o]
+  - summarize_text (6 deps) [4m,2o]
+  - test_connection (1 deps) [1m] [API]
+  - translate_text (7 deps) [5m,2o]
+  - upsert_index_datapoints (1 deps) [1m] [API]
+
+METHODS (50):
+  - api_request (1 deps) [1m] [API]
+  - batch_upsert_datapoints (2 deps) [2m] [API]
+  - build_ai_payload (2 deps) [2m]
+  - build_base_payload (0 deps)
+  - build_classify_payload (2 deps) [2m]
+  - build_conversation_payload (1 deps) [1m]
+  - build_drive_query (0 deps)
+  - build_embedding_payload (1 deps) [1m]
+  - build_gemini_payload (1 deps) [1m]
+  - build_image_payload (1 deps) [1m]
+  - build_message_parts (0 deps)
+  - build_neighbors_payload (1 deps) [1m]
+  - cascade_model_discovery (3 deps) [3m]
+  - check_finish_reason (0 deps)
+  - circuit_breaker_retry (0 deps) [API] [CACHED]
+  - create_model_label (0 deps)
+  - drive_api_url (0 deps) [API]
+  - dynamic_model_picklist (2 deps) [2m]
+  - enforce_vertex_rate_limits (0 deps) [API] [CACHED]
+  - extract_drive_file_id (0 deps)
+  - extract_json (0 deps)
+  - extract_response (3 deps) [3m]
+  - fetch_file_content (4 deps) [4m]
+  - fetch_fresh_publisher_models (1 deps) [1m] [API] [CACHED]
+  - fetch_publisher_models (1 deps) [1m] [API] [CACHED]
+  - fetch_publisher_models_minimal (0 deps) [API]
+  - format_parse_sample (1 deps) [1m]
+  - generate_embedding_single_exec (2 deps) [2m]
+  - generate_embeddings_batch_exec (2 deps) [2m]
+  - get_export_mime_type (0 deps)
+  - get_safety_ratings (0 deps)
+  - get_static_model_list (0 deps)
+  - handle_429_with_backoff (0 deps)
+  - handle_drive_error (0 deps)
+  - handle_vertex_error (0 deps)
+  - payload_for_ai_classify (2 deps) [2m]
+  - payload_for_analyze_image (0 deps)
+  - payload_for_find_neighbors (0 deps)
+  - payload_for_text_embedding (0 deps)
+  - rate_limited_ai_request (3 deps) [3m]
+  - replace_backticks_with_hash (0 deps)
+  - safety_ratings_output_sample (0 deps)
+  - sample_record_output (2 deps) [2m]
+  - sort_model_options (0 deps)
+  - standard_error_response (0 deps)
+  - to_model_options (1 deps) [1m]
+  - transform_find_neighbors_response (0 deps)
+  - usage_output_sample (0 deps)
+  - validate_index_access (1 deps) [1m] [API]
+  - vertex_model_bucket (0 deps)
+
+OBJECT_DEFS (26):
+  - analyze_image_input (2 deps) [1o,1p]
+  - analyze_image_output (2 deps) [2o]
+  - analyze_text_input (2 deps) [2o]
+  - analyze_text_output (2 deps) [2o]
+  - config_schema (5 deps) [5p]
+  - draft_email_input (2 deps) [2o]
+  - draft_email_output (2 deps) [2o]
+  - drive_file_extended (1 deps) [1o]
+  - drive_file_fields (0 deps)
+  - find_neighbors_input (1 deps) [1p] [API]
+  - find_neighbors_output (0 deps)
+  - get_prediction_input (0 deps)
+  - parse_text_input (2 deps) [2o]
+  - parse_text_output (2 deps) [2o]
+  - prediction (0 deps)
+  - safety_and_usage (2 deps) [2o]
+  - safety_rating_schema (0 deps)
+  - send_messages_input (4 deps) [2o,2p]
+  - send_messages_output (0 deps)
+  - summarize_text_input (2 deps) [2o]
+  - summarize_text_output (2 deps) [2o]
+  - text_input_field (0 deps)
+  - text_model_schema (1 deps) [1p]
+  - translate_text_input (3 deps) [2o,1p]
+  - translate_text_output (2 deps) [2o]
+  - usage_schema (0 deps)
+
+PICKLISTS (13):
+  - available_embedding_models (1 deps) [1m]
+  - available_image_models (1 deps) [1m]
+  - available_text_models (1 deps) [1m]
+  - chat_role (0 deps)
+  - embedding_task_list (0 deps)
+  - function_call_mode (0 deps)
+  - languages_picklist (0 deps)
+  - message_types (0 deps)
+  - numeric_comparison_op (0 deps)
+  - response_type (0 deps)
+  - safety_categories (0 deps)
+  - safety_method (0 deps)
+  - safety_threshold (0 deps)
+
+============================================================
+End of Report
