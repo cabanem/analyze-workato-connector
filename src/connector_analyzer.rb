@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 # frozen_string_literal: true
 #
 # connector_analyzer.rb
@@ -215,6 +216,31 @@ module Balance
     end
   end
 
+  def extract_short_lambda_block(src, arrow_idx)
+    raise "Expected '->' at #{arrow_idx}" unless src[arrow_idx, 2] == '->'
+    i = arrow_idx + 2
+    i += 1 while i < src.length && src[i] =~ /\s/
+    # optional params: ->(a,b)
+    if i < src.length && src[i] == '('
+      paren = 1
+      i += 1
+      while i < src.length && paren > 0
+        paren += 1 if src[i] == '('
+        paren -= 1 if src[i] == ')'
+        i += 1
+      end
+      i += 1 while i < src.length && src[i] =~ /\s/
+    end
+    if src[i] == '{'
+      blk = extract_curly_block(src, i)
+      return src[arrow_idx...(i + blk.length)]
+    elsif src[i..] =~ /\Ado\b/
+      return extract_do_end(src, arrow_idx)
+    else
+      raise "Short lambda without body at #{arrow_idx}"
+    end
+  end
+
   def extract_do_end(src, start_idx)
     i = start_idx
     in_s = false
@@ -253,9 +279,9 @@ module Balance
           i += 1
           next
         end
-        if src[i..] =~ /\Ado\b/
+        if src[i..] =~ /\A(do|def|class|module|begin|if|unless|case|while|until)\b/
           depth += 1
-          i += 2
+          i += Regexp.last_match(0).length
           next
         elsif src[i..] =~ /\Aend\b/
           depth -= 1
@@ -327,6 +353,47 @@ module Extractor
     nil
   end
 
+  def extract_top_hash_section_with_pos(src, key)
+    idx = 0
+    in_s = false
+    in_d = false
+    depth = 0
+    while idx < src.length
+      ch = src[idx]
+      if in_s
+        in_s = false if ch == "'" && src[idx-1] != "\\"
+        idx += 1
+        next
+      elsif in_d
+        in_d = false if ch == '"' && src[idx-1] != "\\"
+        idx += 1
+        next
+      else
+        case ch
+        when "'"; in_s = true
+        when '"'; in_d = true
+        when '{'; depth += 1
+        when '}'; depth -= 1 if depth > 0
+        end
+        if depth == 1
+          if src[idx..] =~ /\A#{Regexp.escape(key)}\s*:\s*\{/
+            m = Regexp.last_match
+            start_brace = idx + m[0].rindex('{')
+            block = Balance.extract_curly_block(src, start_brace)
+            return { block: block, start: start_brace, end: start_brace + block.length }
+          end
+        end
+        idx += 1
+      end
+    end
+    if (m3 = src.match(/#{Regexp.escape(key)}\s*:\s*\{/))
+      start3 = m3.end(0) - 1
+      block = Balance.extract_curly_block(src, start3)
+      return { block: block, start: start3, end: start3 + block.length }
+    end
+    nil
+  end
+
   def extract_named_curly_pairs(block_str)
     inner = block_str.strip
     inner = inner[1..-2] if inner.start_with?('{') && inner.end_with?('}')
@@ -364,6 +431,43 @@ module Extractor
     pairs
   end
 
+  def extract_named_curly_pairs_with_pos(block_str, base_abs_start)
+    inner = block_str.strip
+    inner = inner[1..-2] if inner.start_with?('{') && inner.end_with?('}')
+    pairs = {}
+    i = 0
+    in_s = false
+    in_d = false
+    while i < inner.length
+      ch = inner[i]
+      if in_s
+        in_s = false if ch == "'" && inner[i-1] != "\\"
+        i += 1
+        next
+      elsif in_d
+        in_d = false if ch == '"' && inner[i-1] != "\\"
+        i += 1
+        next
+      else
+        if ch == "'"; in_s = true; i += 1; next; end
+        if ch == '"'; in_d = true; i += 1; next; end
+        if inner[i..] =~ /\A([a-zA-Z_]\w*)\s*:\s*\{/
+          m = Regexp.last_match
+          name = m[1]
+          start_brace = i + m[0].rindex('{')
+          block = Balance.extract_curly_block(inner, start_brace)
+          abs_start = base_abs_start + 1 + start_brace
+          pairs[name] = { block: block, start: abs_start, end: abs_start + block.length }
+          i = start_brace + block.length
+          i += 1 while i < inner.length && inner[i] =~ /[\s,]/
+          next
+        end
+        i += 1
+      end
+    end
+    pairs
+  end
+
   def extract_named_lambda_pairs(block_str)
     inner = block_str.strip
     inner = inner[1..-2] if inner.start_with?('{') && inner.end_with?('}')
@@ -385,11 +489,17 @@ module Extractor
         if ch == "'"; in_s = true; i += 1; next; end
         if ch == '"'; in_d = true; i += 1; next; end
 
-        if inner[i..] =~ /\A([a-zA-Z_]\w*[!?]?)\s*:\s*lambda\b/
+        if inner[i..] =~ /\A([a-zA-Z_]\w*[!?]?)\s*:\s*(lambda\b|->)/
           m = Regexp.last_match
           name = m[1]
-          lambda_start = i + m[0].index('lambda')
-          block = Balance.extract_lambda_block(inner, lambda_start)
+          if m[2] == '->'
+            arrow_idx = i + m[0].rindex('->')
+            block = Balance.extract_short_lambda_block(inner, arrow_idx)
+            lambda_start = arrow_idx
+          else
+            lambda_start = i + m[0].index('lambda')
+            block = Balance.extract_lambda_block(inner, lambda_start)
+          end
           pairs[name] = block
           i = lambda_start + block.length
           i += 1 while i < inner.length && inner[i] =~ /[\s,]/
@@ -404,11 +514,38 @@ module Extractor
   def extract_action_parts(action_block)
     parts = {}
     %w[input_fields execute output_fields sample_output help description subtitle title].each do |k|
-      if action_block =~ /#{k}\s*:\s*lambda\b/
+      if action_block =~ /#{k}\s*:\s*(lambda\b|->)/
         start = Regexp.last_match.begin(0)
-        lambda_pos = action_block.index('lambda', start)
-        lb = Balance.extract_lambda_block(action_block, lambda_pos)
+        if action_block[start..] =~ /\A#{k}\s*:\s*->/
+          lambda_pos = action_block.index('->', start)
+          lb = Balance.extract_short_lambda_block(action_block, lambda_pos)
+        else
+          lambda_pos = action_block.index('lambda', start)
+          lb = Balance.extract_lambda_block(action_block, lambda_pos)
+        end
         parts[k] = lb
+      end
+    end
+    parts['picklists'] = action_block.scan(/pick_list:\s*:(\w+)/).flatten.uniq
+    parts
+  end
+
+  def extract_action_parts_with_pos(action_block, base_abs_start)
+    parts = {}
+    %w[input_fields execute output_fields sample_output help description subtitle title].each do |k|
+      if action_block =~ /#{k}\s*:\s*(lambda\b|->)/
+        start = Regexp.last_match.begin(0)
+        if action_block[start..] =~ /\A#{k}\s*:\s*->/
+          lambda_pos = action_block.index('->', start)
+          lb = Balance.extract_short_lambda_block(action_block, lambda_pos)
+          rel = lambda_pos
+        else
+          lambda_pos = action_block.index('lambda', start)
+          lb = Balance.extract_lambda_block(action_block, lambda_pos)
+          rel = lambda_pos
+        end
+        abs_start = base_abs_start + rel
+        parts[k] = { block: lb, start: abs_start, end: abs_start + lb.length }
       end
     end
     parts['picklists'] = action_block.scan(/pick_list:\s*:(\w+)/).flatten.uniq
@@ -428,7 +565,7 @@ module Semantics
 
   def find_direct_http(body)
     hits = []
-    body.to_s.scan(/\b(post|get|put|delete)\s*\(/i) { |m| hits << m[0].downcase }
+    body.to_s.scan(/\b(get|post|put|patch|delete|head|options)\s*\(/i) { |m| hits << m[0].downcase }
     hits.uniq
   end
 
@@ -483,6 +620,7 @@ class ConnectorAnalyzer
     @ir = {
       'connector' => {},
       'actions' => [],
+      'triggers' => [],
       'methods' => [],
       'object_definitions' => [],
       'pick_lists' => []
@@ -490,9 +628,11 @@ class ConnectorAnalyzer
     @graph = {
       'nodes' => [],
       'edges' => [],
-      'paths' => {}
+      'paths' => {},
+      'paths_triggers' => {}
     }
     @issues = []
+    @line_offsets = compute_line_offsets(@src)
   end
 
   def analyze!
@@ -500,6 +640,30 @@ class ConnectorAnalyzer
     parse_sections
     post_process
     self
+  end
+
+  def compute_line_offsets(s)
+    offs = [0]
+    i = 0
+    s.each_line do |line|
+      i += line.bytesize
+      offs << i
+    end
+    offs
+  end
+
+  def pos_to_line_col(idx)
+    # idx is byte offset
+    line = @line_offsets.bsearch_index { |off| off > idx } || @line_offsets.length - 1
+    line -= 1
+    col = idx - @line_offsets[line]
+    [line + 1, col + 1]
+  end
+
+  def src_info(start_idx, end_idx)
+    ls, cs = pos_to_line_col(start_idx)
+    le, ce = pos_to_line_col(end_idx)
+    { 'start' => start_idx, 'end' => end_idx, 'line_start' => ls, 'col_start' => cs, 'line_end' => le, 'col_end' => ce }
   end
 
   def parse_topmeta
@@ -510,29 +674,41 @@ class ConnectorAnalyzer
     auth_modes << 'oauth2' if @src.include?('authorization:') && @src.include?('oauth2:')
     auth_modes << 'custom' if @src.include?('custom_auth')
     @ir['connector']['auth_modes'] = auth_modes.uniq
+    if auth_modes.empty?
+      @issues << {
+        'severity' => 'info',
+        'category' => 'auth_missing',
+        'message'  => "No authorization block detected under connection.authorization",
+        'where'    => 'connection.authorization'
+      }
+    end
   end
 
   def parse_sections
-    actions_block  = Extractor.extract_top_hash_section(@src, 'actions')
-    methods_block  = Extractor.extract_top_hash_section(@src, 'methods')
-    objdefs_block  = Extractor.extract_top_hash_section(@src, 'object_definitions')
-    picklists_block= Extractor.extract_top_hash_section(@src, 'pick_lists')
+    actions_sec   = Extractor.extract_top_hash_section_with_pos(@src, 'actions')
+    triggers_sec  = Extractor.extract_top_hash_section_with_pos(@src, 'triggers')
+    methods_sec   = Extractor.extract_top_hash_section_with_pos(@src, 'methods')
+    objdefs_sec   = Extractor.extract_top_hash_section_with_pos(@src, 'object_definitions')
+    picklists_sec = Extractor.extract_top_hash_section_with_pos(@src, 'pick_lists')
     test_block     = @src[/\btest\s*:\s*lambda\b.+/m]
 
-    parse_actions(actions_block) if actions_block
-    parse_methods(methods_block) if methods_block
-    parse_object_definitions(objdefs_block) if objdefs_block
-    parse_picklists(picklists_block) if picklists_block
+    parse_actions(actions_sec[:block], actions_sec[:start]) if actions_sec
+    parse_triggers(triggers_sec[:block], triggers_sec[:start]) if triggers_sec
+    parse_methods(methods_sec[:block], methods_sec[:start]) if methods_sec
+    parse_object_definitions(objdefs_sec[:block]) if objdefs_sec
+    parse_picklists(picklists_sec[:block]) if picklists_sec
     parse_top_test(test_block) if test_block
   end
 
-  def parse_actions(block)
-    pairs = Extractor.extract_named_curly_pairs(block)
-    pairs.each do |action_name, action_block|
-      parts = Extractor.extract_action_parts(action_block)
-      execute_body = parts['execute'] || ''
-      input_body   = parts['input_fields'] || ''
-      output_body  = parts['output_fields'] || ''
+  def parse_actions(block, base_start)
+    pairs = Extractor.extract_named_curly_pairs_with_pos(block, base_start)
+    pairs.each do |action_name, info|
+      action_block = info[:block]
+      action_abs   = info[:start]
+      parts = Extractor.extract_action_parts_with_pos(action_block, action_abs)
+      execute_body = parts.dig('execute', :block) || ''
+      input_body   = parts.dig('input_fields', :block) || ''
+      output_body  = parts.dig('output_fields', :block) || ''
 
       action = {
         'name' => action_name,
@@ -544,8 +720,12 @@ class ConnectorAnalyzer
           'calls'          => Semantics.find_calls(execute_body),
           'direct_http'    => Semantics.find_direct_http(execute_body),
           'template_symbol'=> Semantics.run_vertex_template_symbol(execute_body),
-          'kwargs'         => Semantics.run_vertex_kwargs(execute_body)  # <— NEW
-        }
+          'kwargs'         => Semantics.run_vertex_kwargs(execute_body),
+          'src'            => parts['execute'] ? src_info(parts['execute'][:start], parts['execute'][:end]) : nil
+        }.compact,
+        'input_fields_src'  => parts['input_fields']  ? src_info(parts['input_fields'][:start],  parts['input_fields'][:end])  : nil,
+        'output_fields_src' => parts['output_fields'] ? src_info(parts['output_fields'][:start], parts['output_fields'][:end]) : nil,
+        'sample_output_present' => !!parts['sample_output']
       }
 
       @ir['actions'] << action
@@ -554,6 +734,15 @@ class ConnectorAnalyzer
       add_node(entry)
       action['execute']['calls'].each { |callee| add_edge(entry, callee) }
       action['execute']['direct_http'].each { |verb| add_edge(entry, "HTTP:#{verb.upcase}") }
+
+      unless action['sample_output_present']
+        @issues << {
+          'severity' => 'warning',
+          'category' => 'missing_sample_output',
+          'message'  => "Action '#{action_name}' is missing sample_output",
+          'where'    => "actions.#{action_name}"
+        }
+      end
 
       if action_name =~ /image/i
         ts = action['execute']['template_symbol']
@@ -569,16 +758,18 @@ class ConnectorAnalyzer
     end
   end
 
-  def parse_methods(block)
-    pairs = Extractor.extract_named_lambda_pairs(block)
-    pairs.each do |method_name, lambda_body|
+  def parse_methods(block, base_start)
+    pairs = Extractor.extract_named_lambda_pairs_with_pos(block, base_start)
+    pairs.each do |method_name, info|
+      lambda_body = info[:block]
       calls = Semantics.find_calls(lambda_body)
       direct_http = Semantics.find_direct_http(lambda_body)
       m = {
         'name' => method_name,
         'lambda_params' => Semantics.lambda_params(lambda_body),
         'calls' => calls,
-        'direct_http' => direct_http
+        'direct_http' => direct_http,
+        'src' => src_info(info[:start], info[:end])
       }
       @ir['methods'] << m
       add_node(method_name)
@@ -607,6 +798,119 @@ class ConnectorAnalyzer
     end
   end
 
+
+  def parse_triggers(block, base_start)
+    pairs = Extractor.extract_named_curly_pairs_with_pos(block, base_start)
+    pairs.each do |trig_name, info|
+      trig_block = info[:block]
+      trig_abs   = info[:start]
+      # Identify parts
+      parts = {}
+      %w[poll webhook_subscribe webhook_notification webhook_unsubscribe input_fields output_fields sample_output].each do |k|
+        if trig_block =~ /#{k}\s*:\s*(lambda\b|->)/
+          start = Regexp.last_match.begin(0)
+          if trig_block[start..] =~ /\A#{k}\s*:\s*->/
+            lambda_pos = trig_block.index('->', start)
+            lb = Balance.extract_short_lambda_block(trig_block, lambda_pos)
+            abs = trig_abs + lambda_pos
+          else
+            lambda_pos = trig_block.index('lambda', start)
+            lb = Balance.extract_lambda_block(trig_block, lambda_pos)
+            abs = trig_abs + lambda_pos
+          end
+          parts[k] = { block: lb, start: abs, end: abs + lb.length }
+        end
+      end
+
+      input_body  = parts.dig('input_fields', :block) || ''
+      output_body = parts.dig('output_fields', :block) || ''
+      type = if parts['poll']
+               'polling'
+             elsif parts['webhook_notification']
+               'webhook'
+             else
+               'unknown'
+             end
+
+      trig = {
+        'name' => trig_name,
+        'type' => type,
+        'input_object_defs'  => Semantics.find_object_def_refs(input_body),
+        'output_object_defs' => Semantics.find_object_def_refs(output_body),
+        'sample_output_present' => !!parts['sample_output'],
+        'entrypoints' => {}
+      }
+
+      if parts['poll']
+        body = parts['poll'][:block]
+        ep = {
+          'lambda_params' => Semantics.lambda_params(body),
+          'calls'         => Semantics.find_calls(body),
+          'direct_http'   => Semantics.find_direct_http(body),
+          'src'           => src_info(parts['poll'][:start], parts['poll'][:end])
+        }
+        trig['entrypoints']['poll'] = ep
+        node = "trigger:#{trig_name}:poll"
+        add_node(node)
+        ep['calls'].each { |c| add_edge(node, c) }
+        ep['direct_http'].each { |v| add_edge(node, "HTTP:#{v.upcase}") }
+      end
+      if parts['webhook_subscribe']
+        body = parts['webhook_subscribe'][:block]
+        ep = {
+          'lambda_params' => Semantics.lambda_params(body),
+          'calls'         => Semantics.find_calls(body),
+          'direct_http'   => Semantics.find_direct_http(body),
+          'src'           => src_info(parts['webhook_subscribe'][:start], parts['webhook_subscribe'][:end])
+        }
+        trig['entrypoints']['webhook_subscribe'] = ep
+        node = "trigger:#{trig_name}:webhook_subscribe"
+        add_node(node)
+        ep['calls'].each { |c| add_edge(node, c) }
+        ep['direct_http'].each { |v| add_edge(node, "HTTP:#{v.upcase}") }
+      end
+      if parts['webhook_notification']
+        body = parts['webhook_notification'][:block]
+        ep = {
+          'lambda_params' => Semantics.lambda_params(body),
+          'calls'         => Semantics.find_calls(body),
+          'direct_http'   => Semantics.find_direct_http(body),
+          'src'           => src_info(parts['webhook_notification'][:start], parts['webhook_notification'][:end])
+        }
+        trig['entrypoints']['webhook_notification'] = ep
+        node = "trigger:#{trig_name}:webhook_notification"
+        add_node(node)
+        ep['calls'].each { |c| add_edge(node, c) }
+        ep['direct_http'].each { |v| add_edge(node, "HTTP:#{v.upcase}") }
+      end
+      if parts['webhook_unsubscribe']
+        body = parts['webhook_unsubscribe'][:block]
+        ep = {
+          'lambda_params' => Semantics.lambda_params(body),
+          'calls'         => Semantics.find_calls(body),
+          'direct_http'   => Semantics.find_direct_http(body),
+          'src'           => src_info(parts['webhook_unsubscribe'][:start], parts['webhook_unsubscribe'][:end])
+        }
+        trig['entrypoints']['webhook_unsubscribe'] = ep
+        node = "trigger:#{trig_name}:webhook_unsubscribe"
+        add_node(node)
+        ep['calls'].each { |c| add_edge(node, c) }
+        ep['direct_http'].each { |v| add_edge(node, "HTTP:#{v.upcase}") }
+      end
+
+      if type == 'webhook' && !parts['webhook_subscribe'] && !parts['webhook_unsubscribe']
+        @issues << {
+          'severity' => 'warning',
+          'category' => 'webhook_incomplete',
+          'message'  => "Trigger '#{trig_name}' defines webhook_notification without subscribe/unsubscribe",
+          'where'    => "triggers.#{trig_name}"
+        }
+      end
+
+      @ir['triggers'] << trig
+    end
+  end
+
   def parse_top_test(test_blob)
     if test_blob && (idx = test_blob.index('lambda'))
       lb = Balance.extract_lambda_block(test_blob, idx)
@@ -632,6 +936,9 @@ class ConnectorAnalyzer
     all_calls = []
     @ir['methods'].each { |m| all_calls.concat(m['calls']) }
     @ir['actions'].each { |a| all_calls.concat(a.dig('execute','calls') || []) }
+    @ir['triggers'].each do |t|
+      t.fetch('entrypoints', {}).each_value { |ep| all_calls.concat(ep['calls'] || []) }
+    end
     all_calls.uniq!
     (all_calls - defined_methods.to_a).each do |undef_name|
       next if undef_name.start_with?('HTTP:')
@@ -653,7 +960,12 @@ class ConnectorAnalyzer
       }
     end
 
-    (@ir['methods'] + @ir['actions'].map{|a| {'name'=>"execute:#{a['name']}", 'direct_http'=>a.dig('execute','direct_http')}}).each do |m|
+    (@ir['methods'] +
+      @ir['actions'].map{|a| {'name'=>"execute:#{a['name']}", 'direct_http'=>a.dig('execute','direct_http')}} +
+      @ir['triggers'].flat_map do |t|
+        t.fetch('entrypoints',{}).map { |kind, ep| {'name'=>"trigger:#{t['name']}:#{kind}", 'direct_http'=>ep['direct_http']} }
+      end
+    ).each do |m|
       next unless m['direct_http'] && !m['direct_http'].empty?
       @issues << {
         'severity' => 'warning',
@@ -676,6 +988,17 @@ class ConnectorAnalyzer
       }
     end
 
+    # nudge if many nodes do direct HTTP
+    http_nodes = @graph['edges'].map{|e| e['to']}.select{|n| n.start_with?('HTTP:')}.uniq
+    if http_nodes.size >= 5
+      @issues << {
+        'severity' => 'info',
+        'category' => 'transport_wrapper_recommendation',
+        'message'  => "Multiple nodes call HTTP directly (#{http_nodes.size}). Consider centralizing retries, pagination, and error handling in a method wrapper.",
+        'where'    => 'global'
+      }
+    end
+
     build_call_paths!
   end
 
@@ -684,7 +1007,9 @@ class ConnectorAnalyzer
     @graph['edges'].each do |e|
       (adj[e['from']] ||= []) << e['to']
     end
-    entries = (@ir['actions'].map { |a| "execute:#{a['name']}" } + ['top:test']).select { |n| @graph['nodes'].include?(n) }
+    entries = (@ir['actions'].map { |a| "execute:#{a['name']}" } +
+               @ir['triggers'].flat_map { |t| t.fetch('entrypoints',{}).keys.map{|k| "trigger:#{t['name']}:#{k}"} } +
+               ['top:test']).select { |n| @graph['nodes'].include?(n) }
     seen = Set.new
     stack = entries.dup
     while (n = stack.pop)
@@ -705,6 +1030,17 @@ class ConnectorAnalyzer
       paths = []
       dfs_paths(entry, adj, [], Set.new, paths, 0, 60)
       @graph['paths'][entry.sub('execute:', '')] = paths
+    end
+
+    trig_entries = @ir['triggers'].flat_map do |t|
+      t.fetch('entrypoints',{}).keys.map { |k| "trigger:#{t['name']}:#{k}" }
+    end.select { |n| @graph['nodes'].include?(n) }
+    trig_entries.each do |entry|
+      paths = []
+      dfs_paths(entry, adj, [], Set.new, paths, 0, 60)
+      # key format: "<name>:<kind>"
+      key = entry.split(':', 2).last # remove leading "trigger:"
+      @graph['paths_triggers'][key] = paths
     end
   end
 
@@ -815,6 +1151,24 @@ module IRClean
       end
 
       out
+    end
+
+    # Build cleaned triggers
+    clean['triggers'] = (ir['triggers'] || []).map do |t|
+      # transitive calls for poll / notification
+      paths_poll = (graph['paths_triggers']["#{t['name']}:poll"] || []).map { |p| p.reject{|n| n.start_with?('trigger:')}.join(' → ') }.uniq
+      paths_notif = (graph['paths_triggers']["#{t['name']}:webhook_notification"] || []).map { |p| p.reject{|n| n.start_with?('trigger:')}.join(' → ') }.uniq
+
+      {
+        'name' => t['name'],
+        'type' => t['type'],
+        'input_object_defs' => t['input_object_defs'],
+        'output_object_defs'=> t['output_object_defs'],
+        'entrypoints' => {
+          'poll' => t.dig('entrypoints','poll') ? { 'transitive_calls' => paths_poll } : nil,
+          'webhook_notification' => t.dig('entrypoints','webhook_notification') ? { 'transitive_calls' => paths_notif } : nil
+        }.compact
+      }
     end
 
     # methods (lean view)
@@ -1033,6 +1387,7 @@ module Viz
       label = n.gsub('"', '\"')
       shape =
         if n.start_with?('execute:') then "([#{label}])"
+        elsif n.start_with?('trigger:') then "([#{label}])"
         elsif n.start_with?('HTTP:') then "{{#{label}}}"
         else "[#{label}]"
         end
@@ -1045,10 +1400,14 @@ module Viz
 
     # base classes
     action_ids = ir['actions'].map { |a| slug("execute:#{a['name']}") }
+    trigger_ids= (ir['triggers'] || []).flat_map { |t|
+      t.fetch('entrypoints',{}).keys.map { |k| slug("trigger:#{t['name']}:#{k}") }
+    }
     http_ids   = graph['nodes'].select { |n| n.start_with?('HTTP:') }.map { |n| slug(n) }
     method_ids = graph['nodes'].reject { |n| n.start_with?('execute:') || n.start_with?('HTTP:') }.map { |n| slug(n) }
 
     lines << "  classDef action fill:#E3F2FD,stroke:#1E88E5,stroke-width:1px;"
+    lines << "  classDef trigger fill:#E8EAF6,stroke:#3949AB,stroke-width:1px;"
     lines << "  classDef method fill:#E8F5E9,stroke:#2E7D32,stroke-width:1px;"
     lines << "  classDef http   fill:#FFF3E0,stroke:#EF6C00,stroke-width:1px;"
 
@@ -1059,6 +1418,7 @@ module Viz
     lines << "  classDef undef stroke-dasharray:4 2,stroke:#EF4444;"
 
     action_ids.each { |id| lines << "  class #{id} action;" }
+    trigger_ids.each { |id| lines << "  class #{id} trigger;" }
     method_ids.each { |id| lines << "  class #{id} method;" }
     http_ids.each   { |id| lines << "  class #{id} http;" }
 
@@ -1171,6 +1531,7 @@ module Viz
       label = n.gsub('"', '\"')
       shape =
         if n.start_with?('execute:') then "([#{label}])"
+        elsif n.start_with?('trigger:') then "([#{label}])"
         elsif n.start_with?('HTTP:') then "{{#{label}}}"
         else "[#{label}]"
         end
@@ -1180,10 +1541,12 @@ module Viz
     edges.each { |e| lines << "  #{slug(e['from'])} --> #{slug(e['to'])}" }
 
     action_ids = nodes.select { |n| n.start_with?('execute:') }.map { |n| slug(n) }
+    trigger_ids= nodes.select { |n| n.start_with?('trigger:') }.map { |n| slug(n) }
     http_ids   = nodes.select { |n| n.start_with?('HTTP:') }.map { |n| slug(n) }
     method_ids = nodes.reject { |n| n.start_with?('execute:') || n.start_with?('HTTP:') }.map { |n| slug(n) }
 
     lines << "  classDef action fill:#E3F2FD,stroke:#1E88E5,stroke-width:1px;"
+    lines << "  classDef trigger fill:#E8EAF6,stroke:#3949AB,stroke-width:1px;"
     lines << "  classDef method fill:#E8F5E9,stroke:#2E7D32,stroke-width:1px;"
     lines << "  classDef http   fill:#FFF3E0,stroke:#EF6C00,stroke-width:1px;"
     lines << "  classDef hot stroke:#6A1B9A,stroke-width:3px;"
@@ -1192,6 +1555,7 @@ module Viz
     lines << "  classDef undef stroke-dasharray:4 2,stroke:#EF4444;"
 
     action_ids.each { |id| lines << "  class #{id} action;" }
+    trigger_ids.each { |id| lines << "  class #{id} trigger;" }
     method_ids.each { |id| lines << "  class #{id} method;" }
     http_ids.each   { |id| lines << "  class #{id} http;" }
 
@@ -1349,6 +1713,31 @@ module Viz
     File.write(File.join(out_dir, 'call_graph_actions.md'), index_lines.join("\n"))
   end
 
+  def write_markdown_index(out_dir, ir, metrics)
+    md = +"# Connector overview\n\n"
+    md << "- **Title**: #{ir.dig('connector','title')}\n"
+    md << "- **Auth modes**: #{Array(ir.dig('connector','auth_modes')).join(', ')}\n\n"
+    md << "## Visuals\n"
+    md << "- [Call graph (SVG)](call_graph.svg)\n"
+    md << "- [Call graph (Mermaid)](call_graph.md)\n"
+    md << "- [Per‑action graphs](call_graph_actions.md)\n\n"
+    md << "## Issues (by category)\n\n"
+    issues_path = File.join(out_dir, 'issues.json')
+    issues = File.exist?(issues_path) ? JSON.parse(File.read(issues_path)) : []
+    issues.group_by { |i| i['category'] }.sort_by{|k,_| k}.each do |cat, list|
+      md << "### #{cat} (#{list.size})\n"
+      list.first(50).each { |i| md << "- #{i['message']} — _#{i['where']}_\n" }
+      md << "\n"
+    end
+    md << "## Complexity (top 20 actions)\n\n"
+    per = metrics['per_action'] || {}
+    md << "| action | nodes | edges | depth | paths | http |\n|---|---:|---:|---:|---:|---:|\n"
+    per.sort_by { |_, m| -m['nodes'] }.first(20).each do |name, m|
+      md << "| `#{name}` | #{m['nodes']} | #{m['edges']} | #{m['max_depth']} | #{m['paths']} | #{m['http_nodes']} |\n"
+    end
+    File.write(File.join(out_dir, 'index.md'), md)
+  end
+
   def write_complexity_dashboard(out_dir, metrics)
     path = File.join(out_dir, 'complexity.html')
     per = metrics['per_action'] || {}
@@ -1403,13 +1792,111 @@ module Viz
 end
 
 # -------------------------------
+# SARIF
+# -------------------------------
+module Reports
+  module_function
+  def write_sarif(file_path, ir, issues)
+    runs = [{
+      'tool' => {
+        'driver' => {
+          'name' => 'connector_analyzer',
+          'informationUri' => 'https://example.invalid/connector_analyzer',
+          'rules' => []
+        }
+      },
+      'results' => []
+    }]
+    rules_index = {}
+
+    issues.each do |iss|
+      rule_id = iss['category'] || 'issue'
+      unless rules_index[rule_id]
+        rules_index[rule_id] = true
+        runs[0]['tool']['driver']['rules'] << { 'id' => rule_id, 'name' => rule_id }
+      end
+      region = location_from_where(ir, iss['where'])
+      result = {
+        'ruleId' => rule_id,
+        'level'  => sarif_level(iss['severity']),
+        'message' => { 'text' => iss['message'] },
+        'locations' => [{
+          'physicalLocation' => {
+            'artifactLocation' => { 'uri' => 'connector.rb' },
+            'region' => region || {}
+          }
+        }]
+      }
+      runs[0]['results'] << result
+    end
+    sarif = { '$schema' => 'https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0.json',
+              'version' => '2.1.0',
+              'runs' => runs }
+    File.write(file_path, JSON.pretty_generate(sarif))
+  end
+
+  def sarif_level(sev)
+    case sev
+    when 'error' then 'error'
+    when 'warning' then 'warning'
+    else 'note'
+    end
+  end
+
+  # Map "where" to a recorded src range when available
+  def location_from_where(ir, where)
+    return nil unless where.is_a?(String)
+    parts = where.split('.')
+    case parts.first
+    when 'actions'
+      name = parts[1]
+      act = ir['actions'].find { |a| a['name'] == name }
+      return nil unless act
+      if parts[2] == 'execute' && act.dig('execute','src')
+        s = act['execute']['src']
+        return {
+          'startLine' => s['line_start'], 'startColumn' => s['col_start'],
+          'endLine' => s['line_end'], 'endColumn' => s['col_end']
+        }
+      end
+    when 'methods'
+      name = parts[1]
+      m = ir['methods'].find { |mm| mm['name'] == name }
+      if m && m['src']
+        s = m['src']
+        return {
+          'startLine' => s['line_start'], 'startColumn' => s['col_start'],
+          'endLine' => s['line_end'], 'endColumn' => s['col_end']
+        }
+      end
+    when 'triggers'
+      name = parts[1]
+      t = ir['triggers'].find { |tt| tt['name'] == name }
+      if t && parts[2]
+        ep = t.dig('entrypoints', parts[2])
+        if ep && ep['src']
+          s = ep['src']
+          return {
+            'startLine' => s['line_start'], 'startColumn' => s['col_start'],
+            'endLine' => s['line_end'], 'endColumn' => s['col_end']
+          }
+        end
+      end
+    end
+    nil
+  end
+end
+
+# -------------------------------
 # CLI
 # -------------------------------
 if __FILE__ == $0
-  opts = { out: 'out' }
+  opts = { out: 'out', html: false, sarif: nil }
   OptionParser.new do |o|
     o.banner = "Usage: ruby #{File.basename($0)} path/to/connector.rb [-o out_dir]"
     o.on('-o', '--out DIR', 'Output directory') { |v| opts[:out] = v }
+    o.on('--html', 'Generate HTML dashboards (in addition to Markdown)') { opts[:html] = true }
+    o.on('--sarif FILE', 'Write SARIF report to FILE') { |v| opts[:sarif] = v }
   end.parse!
 
   abort("Please provide path to connector file") if ARGV.empty?
@@ -1445,35 +1932,79 @@ if __FILE__ == $0
 
   node_classes = metrics ? Viz.build_node_classes(analyzer.graph, metrics) : {}
 
+  # Markdown-first outputs
   begin
-    Viz.write_mermaid(opts[:out], analyzer.ir, analyzer.graph, node_classes)
+    Viz.write_mermaid_markdown(opts[:out], analyzer.ir, analyzer.graph, node_classes)
   rescue => e
-    warn "[viz] Mermaid generation failed: #{e.message}"
+    warn "[viz] Mermaid (markdown) generation failed: #{e.message}"
   end
 
+  # Graph analysis
   begin
     Viz.write_graphviz(opts[:out], analyzer.graph) # no-op if `dot` missing
   rescue => e
     warn "[viz] Graphviz generation failed: #{e.message}"
   end
 
+  # Per action
   begin
-    Viz.write_mermaid_per_action(opts[:out], analyzer.ir, analyzer.graph, node_classes)
+    Viz.write_markdown_per_action(opts[:out], analyzer.ir, analyzer.graph, node_classes)
   rescue => e
-    warn "[viz] Per-action Mermaid generation failed: #{e.message}"
+    warn "[viz] Per-action Mermaid (markdown) generation failed: #{e.message}"
   end
 
-  begin
-    Viz.write_complexity_dashboard(opts[:out], metrics) if metrics
-  rescue => e
-    warn "[viz] Complexity dashboard failed: #{e.message}"
+  # Markdown index
+  Viz.write_markdown_index(opts[:out], analyzer.ir, metrics) if metrics
+
+  # Optional HTML dashboards (behind --html)
+  if opts[:html]
+    begin
+      Viz.write_mermaid(opts[:out], analyzer.ir, analyzer.graph, node_classes)
+    rescue => e
+      warn "[viz] Mermaid (HTML) generation failed: #{e.message}"
+    end
+    begin
+      Viz.write_mermaid_per_action(opts[:out], analyzer.ir, analyzer.graph, node_classes)
+    rescue => e
+      warn "[viz] Per-action Mermaid (HTML) generation failed: #{e.message}"
+    end
+    begin
+      Viz.write_complexity_dashboard(opts[:out], metrics) if metrics
+    rescue => e
+      warn "[viz] Complexity dashboard failed: #{e.message}"
+    end
   end
 
-  puts "[✓] Wrote: #{ir_path}, #{cg_path}, #{is_path}, #{ic_path}, " \
-       "#{File.join(opts[:out], 'metrics.json')}, " \
-       "#{File.join(opts[:out], 'call_graph.mmd')}, #{File.join(opts[:out], 'call_graph.html')}, " \
-       "#{File.join(opts[:out], 'call_graph_actions.html')}, complexity.html (plus /actions/*.html, *.mmd)"
+  # Optional SARIF
+  if opts[:sarif]
+    begin
+      Reports.write_sarif(opts[:sarif], analyzer.ir, analyzer.issues)
+    rescue => e
+      warn "[sarif] Failed: #{e.message}"
+    end
+  end
+
+  outputs = [
+    ir_path, cg_path, is_path, ic_path,
+    File.join(opts[:out], 'metrics.json'),
+    File.join(opts[:out], 'call_graph.mmd'),
+    File.join(opts[:out], 'call_graph.md'),
+    File.join(opts[:out], 'call_graph_actions.md'),
+    File.join(opts[:out], 'index.md'),
+    File.join(opts[:out], 'call_graph.svg')
+  ]
+
+  if opts[:html]
+    outputs += [
+      File.join(opts[:out], 'call_graph.html'),
+      File.join(opts[:out], 'call_graph_actions.html'),
+      File.join(opts[:out], 'complexity.html')
+    ]
+  end  
+  
+  puts "[✓] Wrote:"
+  outputs.each { |p| puts "  - #{p}" }
   puts "Actions: #{analyzer.ir['actions'].size}, Methods: #{analyzer.ir['methods'].size}, " \
-       "ObjectDefs: #{analyzer.ir['object_definitions'].size}, PickLists: #{analyzer.ir['pick_lists'].size}"
+       "Triggers: #{analyzer.ir['triggers'].size}, ObjectDefs: #{analyzer.ir['object_definitions'].size}, PickLists: #{analyzer.ir['pick_lists'].size}"
   puts "Issues: #{analyzer.issues.size}"
 end
