@@ -6,4 +6,4 @@ if [[ $# -lt 1 ]]; then
   exit 2
 fi
 
-ruby workato_connector_inspect.rb "$@"
+ruby src/workato_connector_inspect.rb "$@"
