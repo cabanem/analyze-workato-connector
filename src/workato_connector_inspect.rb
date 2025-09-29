@@ -115,7 +115,7 @@ end
 
 module Workato
   ROOT_KEYS = %w[
-    title connection test actions triggers object_definitions pick_lists methods
+    title version connection test actions triggers object_definitions pick_lists methods
     secure_tunnel webhook_keys streams custom_action custom_action_help
   ].freeze
 
