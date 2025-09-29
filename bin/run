@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+  echo "Usage: bin/run PATH/TO/connector.rb [--outdir ./out] [--emit json,md,dot,ndjson] [--pretty] [--graph-name Name]"
+  exit 2
+fi
+
+ruby workato_connector_inspect.rb "$@"

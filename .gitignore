@@ -1,12 +1,3 @@
+/vendor/
+/out/
 /.bundle/
-/.yardoc
-/_yardoc/
-/coverage/
-/doc/
-/pkg/
-/spec/reports/
-/tmp/
-master.key
-
-# rspec failure tracking
-.rspec_status
