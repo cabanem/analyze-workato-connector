@@ -1,7 +1,0 @@
-# Core dependencies for connector analysis
-pandas>=1.5.0,<2.0.0
-matplotlib>=3.5.0,<4.0.0
-networkx>=2.8.0,<4.0.0
-
-# Optional: for enhanced performance with large datasets
-# numpy>=1.21.0,<2.0.0  # pandas already includes numpy as dependency
