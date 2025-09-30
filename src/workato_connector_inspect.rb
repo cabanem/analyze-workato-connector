@@ -39,6 +39,7 @@ require 'json'
 require 'set'
 require 'ripper'
 require 'strscan'
+require 'parser'
 
 begin
   require 'parser/current'
@@ -88,17 +89,27 @@ module Util
   end
 
   def node_loc(node)
-    if node && node.location && node.location.expression
-      loc = node.location.expression
-      { line: loc.line, column: loc.column, length: loc.size }
-    else
-      {}
-    end
+    return {} unless node && node.location && node.location.expression
+    loc = node.location.expression
+    {
+      line:   loc.line,
+      column: loc.column,
+      length: loc.size,
+      begin:  loc.begin_pos,
+      end:    loc.end_pos
+    }
   end
 
   def read_source(path)
     content = File.read(path, mode: 'r:UTF-8')
     [content, content.each_line.count]
+  end
+
+  def slice_source(source, loc, max_bytes: 16_384) # non-destructive; safe cap
+    return nil unless source && loc && loc[:begin] && loc[:end]
+    start = loc[:begin]
+    stop  = [loc[:end], start + max_bytes].min
+    source.byteslice(start...stop)
   end
 
   def safe_filename(base, ext)
@@ -131,23 +142,21 @@ end
 module IR
   # All IR nodes expose: kind, name, loc, meta (Hash), children (Array)
   class Node
-    attr_reader :kind, :name, :loc, :meta, :children
+    attr_reader :id, :kind, :name, :loc, :meta, :children
 
-    def initialize(kind:, name:, loc:, meta: {}, children: [])
-      @kind = kind
-      @name = name
-      @loc = loc || {}
-      @meta = meta
-      @children = children
+    def initialize(kind:, name:, loc:, meta: {}, children: [], id: nil)
+      @kind, @name, @loc = kind, name, loc || {}
+      @meta, @children   = meta.freeze, children.freeze
+      @id                = id || IR::Id.make(kind: @kind, name: @name, loc: @loc)
       freeze
     end
 
     def with_children(new_children)
-      Node.new(kind: @kind, name: @name, loc: @loc, meta: @meta, children: new_children)
+      Node.new(kind: @kind, name: @name, loc: @loc, meta: @meta, children: new_children, id: @id)
     end
 
     def to_h
-      { kind: kind, name: name, loc: loc, meta: meta, children: children.map(&:to_h) }
+      { id: id, kind: kind, name: name, loc: loc, meta: meta, children: children.map(&:to_h) }
     end
   end
 
@@ -212,9 +221,9 @@ module IR
   end
 
   class Bundle
-    attr_reader :root, :issues, :graph, :stats, :salvaged
-    def initialize(root:, issues:, graph:, stats:, salvaged:)
-      @root, @issues, @graph, @stats, @salvaged = root, issues, graph, stats, salvaged
+    attr_reader :root, :issues, :graph, :stats, :salvaged, :lambdas
+    def initialize(root:, issues:, graph:, stats:, salvaged:, lambdas: [])
+      @root, @issues, @graph, @stats, @salvaged, @lambdas = root, issues, graph, stats, salvaged, lambdas
       freeze
     end
 
@@ -227,8 +236,17 @@ module IR
           edges: graph.edges.to_a
         },
         stats: stats,
-        salvaged: salvaged
+        salvaged: salvaged,
+        lambdas: lambdas
       }
+    end
+  end
+
+  module Id
+    module_function
+    def make(kind:, name:, loc:)
+      data = [kind, name, loc&.dig(:begin), loc&.dig(:end), loc&.dig(:line), loc&.dig(:column)].join("\0")
+      "n_" + Digest::SHA1.hexdigest(data)[0, 16]
     end
   end
 end
@@ -271,10 +289,13 @@ class AstParser
     if parser.respond_to?(:diagnostics) && parser.diagnostics.respond_to?(:all_errors_are_fatal=)
       parser.diagnostics.all_errors_are_fatal = false
     end
-    parser.diagnostics.consumer = ->(diag) { @diagnostics << diag }
+    parser.diagnostics.consumer = ->(diag) do
+      @diagnostics << (diag.respond_to?(:render) ? diag.render : diag.to_s)
+    end
 
     ast, comments = parser.parse_with_comments(buffer)
-    { ast: ast, comments: comments, diagnostics: @diagnostics }
+    associations = (Parser::Source::Comment.associate(ast, comments) rescue {})
+    { ast: nil, comments: {}, diagnostics: @diagnostics + [e.message] }
 
   rescue Parser::SyntaxError => e
     { ast: nil, comments: [], diagnostics: @diagnostics + [e.message] }
@@ -355,14 +376,14 @@ end
 class ConnectorWalker
   include Util
 
-  def initialize(filename:, ast:)
-    @filename = filename
-    @ast = ast
+  def initialize(filename:, ast:, comments: {})
+    @filename, @ast, @comments = filename, ast, (comments || {})
     @graph = IR::Graph.new(directed: true)
     @issues = []
     @stats = Hash.new(0)
     @methods_defined = Set.new
     @methods_called = []
+    @lambda_records = []
   end
 
   def walk
@@ -376,7 +397,7 @@ class ConnectorWalker
 
     root = build_root(conn_hash)
     finalize_issues(root)
-    IR::Bundle.new(root: root, issues: @issues, graph: @graph, stats: @stats, salvaged: false)
+    IR::Bundle.new(root: root, issues: @issues, graph: @graph, stats: @stats, salvaged: false, lambdas: @lambda_records)
   end
 
   private
@@ -426,7 +447,11 @@ class ConnectorWalker
       kind: 'connector',
       name: stringish(title_node) || '(untitled)',
       loc: Util.node_loc(hash_node),
-      meta: { filename: @filename, root_keys: keys.sort }
+      meta: {
+        filename: @filename,
+        root_keys: keys.sort,
+        doc: extract_docstring(hash_node)
+      }
     )
 
     children = []
@@ -470,6 +495,15 @@ class ConnectorWalker
     node.meta[:authorization_type_literal] = stringish(auth_type_val) if auth_type_val
 
     node
+  end
+
+  def extract_docstring(node)
+    return nil unless node && @comments && @comments[node]
+    # Concatenate leading comments; avoid mutating originals
+    lines = @comments[node].select { |c| !c.respond_to?(:inline?) || c.inline? }.map(&:text)
+    # Fallback to preceding non-inline comments if needed
+    lines = @comments[node].map(&:text) if lines.empty?
+    lines.empty? ? nil : lines.join("\n")
   end
 
   def extract_test(root_hash)
@@ -679,6 +713,7 @@ class ConnectorWalker
   def register_lambda_in_graph(owner_label, block_node, role, loc)
     # Ensure node
     @graph.add_node(owner_label, label: owner_label, kind: role == 'method' ? 'method' : 'lambda')
+    @lambda_records << { owner: owner_label, role: role, loc: loc }
 
     # Traverse for sends
     traverse(block_node) do |n|
@@ -748,33 +783,203 @@ end
 # ------------------------------ Emitters -------------------------------------
 
 class Emit
-  def self.write_all(bundle:, outdir:, base: 'connector', pretty:, graph_name:, ndjson:)
+  def self.write_all(bundle:, outdir:, base:, pretty:, graph_name:, ndjson:, source: nil)
     Dir.mkdir(outdir) unless Dir.exist?(outdir)
 
-    # JSON IR
-    ir_path = File.join(outdir, Util.safe_filename("#{base}.ir", '.json'))
-    File.write(ir_path, pretty ? JSON.pretty_generate(bundle.to_h) : JSON.dump(bundle.to_h))
+    paths = {}
+
+    # IR JSON
+    paths[:json] = write_json(
+      File.join(outdir, Util.safe_filename("#{base}.ir", '.json')), bundle.to_h, pretty)
 
     # DOT
-    dot_path = File.join(outdir, Util.safe_filename("#{base}.graph", '.dot'))
-    File.write(dot_path, bundle.graph.to_dot(name: graph_name))
+    paths[:dot] = write_text(
+      File.join(outdir, Util.safe_filename("#{base}.graph", '.dot')), bundle.graph.to_dot(name: graph_name))
 
-    # Markdown summary (LLM-friendly)
-    md_path = File.join(outdir, Util.safe_filename("#{base}.summary", '.md'))
-    File.write(md_path, markdown_summary(bundle))
+    # Graph JSON
+    paths[:graph_json] = write_json(File.join(outdir, Util.safe_filename("#{base}.graph", '.json')),
+      {
+        nodes: bundle.graph.nodes.map { |id, info| { id: id, **info } },
+        edges: bundle.graph.edges.to_a.map { |from, to, meta| { from: from, to: to, **(meta || {}) } }
+      }, pretty)
+
+    # Markdown summary
+    paths[:md] = write_text(
+      File.join(outdir, Util.safe_filename("#{base}.summary", '.md')), markdown_summary(bundle))
 
     # NDJSON events (issues + http calls)
-    ndjson_path = File.join(outdir, Util.safe_filename("#{base}.events", '.ndjson'))
-    File.open(ndjson_path, 'w') do |f|
-      bundle.issues.each { |iss| f.puts({ type: 'issue', **iss.to_h }.to_json) }
-      bundle.graph.edges.each do |from, to, meta|
-        if to.to_s.include?('::http#')
-          f.puts({ type: 'http_call', from: from, to: to, meta: meta }.to_json)
+    if ndjson
+      paths[:ndjson] = write_ndjson(File.join(outdir, Util.safe_filename("#{base}.events", '.ndjson'))) do |f|
+        bundle.issues.each { |iss| f.puts({ type: 'issue', **iss.to_h }.to_json) }
+        bundle.graph.edges.each do |from, to, meta|
+          f.puts({ type: 'http_call', from: from, to: to, meta: meta }.to_json) if to.to_s.include?('::http#')
         end
       end
-    end if ndjson
+    end
 
-    { json: ir_path, dot: dot_path, md: md_path, ndjson: ndjson ? ndjson_path : nil }
+    # Sourcemap JSON
+    if source && bundle.root
+      smap = {}
+      walk = lambda do |n|
+        smap[n.id] = { kind: n.kind, name: n.name, loc: n.loc }
+        n.children.each(&walk)
+      end
+      walk.call(bundle.root)
+      paths[:sourcemap] = write_json(File.join(outdir, Util.safe_filename("#{base}.sourcemap", '.json')),
+                                     smap, pretty)
+    end
+
+    # Embedding JSONL (atoms)
+    if source && bundle.root
+      paths[:embed] = write_ndjson(File.join(outdir, Util.safe_filename("#{base}.embed", '.jsonl'))) do |f|
+        enumerate_atoms(bundle).each do |atom|
+          text = Util.slice_source(source, atom[:loc])
+          f.puts({ **atom, text: text }.to_json)
+        end
+      end
+    end
+
+    # Tokens NDJSON (fallback lexical stream)
+    if source
+      paths[:tokens] = write_ndjson(File.join(outdir, Util.safe_filename("#{base}.tokens", '.ndjson'))) do |f|
+        (Ripper.lex(source) || []).each do |(pos, type, str, _)|
+          line, col = pos
+          begin_pos = compute_begin_pos(source, line, col)
+          f.puts({ line: line, column: col, begin: begin_pos, end: begin_pos + str.bytesize,
+                   type: type, text: str }.to_json)
+        end
+      end
+    end
+
+    # SARIF
+    paths[:sarif] = write_json(
+      File.join(outdir, Util.safe_filename("#{base}.sarif", '.json')), sarif(bundle), pretty)
+
+    # JSON Schema for IR (coarse, versioned)
+    paths[:schema] = write_json(
+      File.join(outdir, Util.safe_filename("#{base}.schema", '.json')), ir_schema(version: "1-0-0"), true)
+
+    # Index
+    paths[:index] = write_json(
+      File.join(outdir, Util.safe_filename("#{base}.index", '.json')), { artifacts: paths.compact }, true)
+    paths
+  end
+
+  def self.enumerate_atoms(bundle)
+    atoms = []
+    return atoms unless bundle.root
+    each_node = lambda do |n, path|
+      fq = (path + ["#{n.kind}.#{n.name}"]).join('/')
+      atoms << { id: n.id, kind: n.kind, name: n.name, fqname: fq, loc: n.loc, file: n.meta[:filename],
+                 keys: (n.meta[:keys] || n.meta[:root_keys] || []), http: http_summary(bundle, n) }
+      n.children.each { |ch| each_node.call(ch, path + ["#{n.kind}.#{n.name}"]) }
+    end
+    each_node.call(bundle.root, [])
+    # Also emit lambda “atoms” with their labels
+    bundle.lambdas.each do |lam|
+      atoms << { id: "lam:#{Digest::SHA1.hexdigest([lam[:owner], lam[:loc]&.[](:begin), lam[:loc]&.[](:end)].join("\0"))[0,16]}",
+                 kind: 'lambda', name: lam[:role], fqname: lam[:owner], loc: lam[:loc], file: bundle.root.meta[:filename] }
+    end
+    atoms
+  end
+
+  def self.http_summary(bundle, node)
+    prefix = case node.kind
+             when 'action'  then "action:#{node.name}#"
+             when 'trigger' then "trigger:#{node.name}#"
+             when 'method'  then "method:#{node.name}"
+             else nil
+             end
+    return {} unless prefix
+    edges = bundle.graph.edges.to_a.select { |from, to, _| from.start_with?(prefix) && to.include?('::http#') }
+    labels = edges.map { |_, to, _| (bundle.graph.nodes[to] || {})[:label] }.compact
+    verbs = labels.map { |lbl| lbl.split(' ').first }.uniq
+    { verbs: verbs, endpoints: labels }
+  end
+
+  def self.compute_begin_pos(source, line, col)
+    # Fast single pass index (cached by caller if needed)
+    @line_index ||= begin
+      idx = [0]
+      source.each_line { |l| idx << (idx.last + l.bytesize) }
+      idx
+    end
+    (@line_index[line - 1] || 0) + col
+  end
+
+  def self.write_json(path, obj, pretty)
+    File.write(path, pretty ? JSON.pretty_generate(obj) : JSON.dump(obj))
+    path
+  end
+
+  def self.write_text(path, text)
+    File.write(path, text)
+    path
+  end
+
+  def self.write_ndjson(path)
+    File.open(path, 'w') { |f| yield f }
+    path
+  end
+
+  def self.sarif(bundle)
+    rules = bundle.issues.map(&:code).uniq.map { |code| { "id" => code, "name" => code } }
+    results = bundle.issues.map do |iss|
+      {
+        "ruleId" => iss.code,
+        "level"  => {"info"=>"note","warning"=>"warning","error"=>"error"}[iss.severity.to_s] || "note",
+        "message"=> { "text" => iss.message },
+        "locations" => [{
+          "physicalLocation" => {
+            "artifactLocation" => { "uri" => bundle.root&.meta&.[](:filename).to_s },
+            "region" => { "startLine" => iss.loc[:line].to_i, "startColumn" => iss.loc[:column].to_i }
+          }
+        }]
+      }
+    end
+    {
+      "version"=>"2.1.0",
+      "$schema"=>"https://json.schemastore.org/sarif-2.1.0.json",
+      "runs"=>[{
+        "tool"=>{"driver"=>{"name"=>"Workato Connector Inspector","informationUri"=>"https://github.com/workato/workato-connector-sdk","rules"=>rules}},
+        "results"=>results
+      }]
+    }
+  end
+
+  def self.ir_schema(version:)
+    {
+      "$id"=>"https://example.com/workato-connector-ir.schema.json",
+      "$schema"=>"http://json-schema.org/draft-07/schema#",
+      "title"=>"Workato Connector IR",
+      "version"=>version,
+      "type"=>"object",
+      "required"=>["root","issues","graph","stats","salvaged"],
+      "properties"=>{
+        "root"=>{"$ref"=>"#/definitions/node"},
+        "issues"=>{"type"=>"array","items"=>{"$ref"=>"#/definitions/issue"}},
+        "graph"=>{"type"=>"object","properties"=>{
+          "nodes"=>{"type"=>"object"},
+          "edges"=>{"type"=>"array","items"=>{"type"=>"array"}}
+        }},
+        "stats"=>{"type"=>"object"},
+        "salvaged"=>{"type"=>"boolean"},
+        "lambdas"=>{"type"=>"array","items"=>{"type"=>"object"}}
+      },
+      "definitions"=>{
+        "loc"=>{"type"=>"object","properties"=>{
+          "line"=>{"type"=>"integer"}, "column"=>{"type"=>"integer"},
+          "length"=>{"type"=>"integer"}, "begin"=>{"type"=>"integer"}, "end"=>{"type"=>"integer"}
+        }},
+        "node"=>{"type"=>"object","required"=>["id","kind","name","loc","meta","children"],
+          "properties"=>{"id"=>{"type"=>"string"}, "kind"=>{"type"=>"string"}, "name"=>{"type"=>"string"},
+            "loc"=>{"$ref"=>"#/definitions/loc"},
+            "meta"=>{"type"=>"object"}, "children"=>{"type"=>"array","items"=>{"$ref"=>"#/definitions/node"}}}},
+        "issue"=>{"type"=>"object","properties"=>{
+          "severity"=>{"type"=>"string"}, "code"=>{"type"=>"string"}, "message"=>{"type"=>"string"},
+          "loc"=>{"$ref"=>"#/definitions/loc"}, "context"=>{"type"=>"object"}}}
+      }
+    }
   end
 
   def self.markdown_summary(bundle)
@@ -851,6 +1056,8 @@ class CLI
       max_warnings: 10_000
     }
 
+    options[:emit] = %w[json md dot ndjson graphjson sourcemap embed tokens sarif schema index]
+
     optparser = OptionParser.new do |opts|
       opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} PATH/TO/connector.rb [options]"
 
@@ -879,7 +1086,7 @@ class CLI
     bundle =
       if ast_res[:ast]
         # 2) Walk AST
-        walker = ConnectorWalker.new(filename: path, ast: ast_res[:ast])
+        walker = ConnectorWalker.new(filename: path, ast: ast_res[:ast], comments: ast_res[:comments])
         walker.walk
       else
         # 3) Salvage
@@ -898,8 +1105,8 @@ class CLI
 
     # 4) Emit
     Emit.write_all(bundle: bundle, outdir: options[:outdir], base: options[:base],
-                   pretty: options[:pretty], graph_name: options[:graph_name],
-                   ndjson: options[:emit].include?('ndjson'))
+                  pretty: options[:pretty], graph_name: options[:graph_name],
+                  ndjson: options[:emit].include?('ndjson'), source: source)
 
     # 5) Selectively print summary path for convenience
     puts "Wrote outputs to #{options[:outdir]}"
@@ -909,9 +1116,11 @@ end
 # ------------------------------ Entry point ----------------------------------
 
 if __FILE__ == $PROGRAM_NAME
-  # Log versions of Ruby, parser
-  $stderr.puts "[env] ruby=#{RUBY_VERSION} parser=#{defined?(Parser::VERSION) ? Parser::VERSION : 'unknown'} "\
-              "parser_klass=#{parser_klass} builder=#{builder.class}" if ENV['ANALYZER_DEBUG'] == '1'
+  # Safe debug log (no out-of-scope vars)
+  if ENV['ANALYZER_DEBUG'] == '1'
+    parser_ver = defined?(Parser::VERSION) ? Parser::VERSION : 'unknown'
+    $stderr.puts "[env] ruby=#{RUBY_VERSION} parser=#{parser_ver}"
+  end
 
   CLI.run(ARGV)
 end

@@ -581,7 +581,11 @@
       # OUTPUT
       output_fields: lambda do |_obj_defs, _connection, _cfg|
         call('telemetry_envelope_fields') + [
-          { name: 'embeddings', type: 'array', of: 'array' }
+          { name: 'embeddings', type: 'array', of: 'array' },
+          { name: 'vectors', type: 'array', of: 'object', properties: [
+            { name: 'feature_vector', type: 'array', of: 'number' }
+          ]},
+          { name: 'count', type: 'integer' }
         ]
       end,
       # EXECUTE
@@ -753,19 +757,26 @@
         }.compact
 
       when 'upsert_datapoints'
-        {
-          'datapoints' => Array(variables['datapoints']).map do |d|
-            {
-              'datapointId'      => d['datapoint_id'] || d['id'],
-              'featureVector'    => Array(d['feature_vector'] || d['vector']).map(&:to_f),
-              'sparseEmbedding'  => d['sparse_embedding'],
-              'restricts'        => d['restricts'],
-              'numericRestricts' => d['numeric_restricts'],
-              'crowdingTag'      => d['crowding_tag'],
-              'embeddingMetadata'=> d['embedding_metadata']
-            }.compact
+        datapoints =
+          if Array(variables['datapoints']).any?
+            Array(variables['datapoints']).map do |d|
+              {
+                'datapointId'      => d['datapoint_id'] || d['id'],
+                'featureVector'    => Array(d['feature_vector'] || d['vector']).map(&:to_f),
+                'sparseEmbedding'  => d['sparse_embedding'],
+                'restricts'        => d['restricts'],
+                'numericRestricts' => d['numeric_restricts'],
+                'crowdingTag'      => d['crowding_tag'],
+                'embeddingMetadata'=> d['embedding_metadata']
+              }.compact
+            end
+          elsif Array(variables['embeddings']).any?
+            call('coerce_embeddings_to_datapoints', variables)
+          else
+            []
           end
-        }
+
+        { 'datapoints' => datapoints }
 
       # Multimodal
       when 'multimodal'
@@ -1355,23 +1366,13 @@
           features: ['batching', 'caching'],
           config_template: {
             'validate' => {
-              'schema' => [
-                { 'name' => 'texts', 'required' => true }
-              ],
-              'constraints' => [
-                { 'type' => 'max_items', 'field' => 'texts', 'value' => 100 }
-              ]
+              'schema' => [ { 'name' => 'texts', 'required' => true } ],
+              'constraints' => [ { 'type' => 'max_items', 'field' => 'texts', 'value' => 100 } ]
             },
-            'payload' => {
-              'format' => 'embedding'
-            },
-            'endpoint' => {
-              'path' => ':predict',
-              'method' => 'POST'
-            },
-            'extract' => {
-              'format' => 'embeddings'
-            }
+            'payload' => { 'format' => 'embedding' },
+            'endpoint' => { 'path' => ':predict', 'method' => 'POST' },
+            'extract' => { 'format' => 'embeddings' },
+            'post_process' => 'wrap_embeddings_vectors'
           }
         },
         
@@ -1408,8 +1409,10 @@
           config_template: {
             'validate' => {
               'schema' => [
-                { 'name' => 'index',      'required' => true },
-                { 'name' => 'datapoints', 'required' => true }
+                { 'name' => 'index', 'required' => true }
+              ],
+              'constraints' => [
+                { 'type' => 'one_of', 'fields' => ['datapoints', 'embeddings'] }
               ]
             },
             'payload'  => { 'format' => 'upsert_datapoints' },
@@ -1930,8 +1933,6 @@
     get_behavior_input_fields: lambda do |behavior, show_advanced, ui_cfg = {}|
       show_advanced = !!show_advanced
       ui_cfg ||= {}
-      # If config-driven mode exists, show the model picker only when explicit.
-      # If not (old recipes), include it for backward-compatibility.
       explicit      = (ui_cfg['model_mode'] == 'explicit')
       legacy_mode   = !ui_cfg.key?('model_mode')
       include_model = false
@@ -2088,23 +2089,47 @@
         end
         fields
       when 'vector.upsert_datapoints'
-        [
-          { name: 'index', label: 'Index', hint: 'Index resource or ID (e.g. projects/.../indexes/IDX or IDX)', optional: false },
-          { name: 'datapoints', label: 'Datapoints', type: 'array', of: 'object', properties: [
-            { name: 'datapoint_id', label: 'Datapoint ID', optional: false },
-            { name: 'feature_vector', label: 'Feature vector', type: 'array', of: 'number', optional: false },
-            { name: 'restricts', type: 'array', of: 'object', properties: [
-              { name: 'namespace' }, { name: 'allowList', type: 'array', of: 'string' }, { name: 'denyList', type: 'array', of: 'string' }
-            ]},
-            { name: 'numeric_restricts', type: 'array', of: 'object', properties: [
-              { name: 'namespace' }, { name: 'op' }, { name: 'valueInt' }, { name: 'valueFloat', type: 'number' }, { name: 'valueDouble', type: 'number' }
-            ]},
-            { name: 'crowding_tag', type: 'object', properties: [{ name: 'crowdingAttribute' }] },
-            { name: 'embedding_metadata', type: 'object' }
-          ]}
+        fields = [
+          # Target
+          { name: 'index', label: 'Index', group: 'Target', hint: 'Index resource or ID (e.g., projects/.../indexes/IDX or just IDX)', optional: false },
+          # Source: from embeddings (recommended path from Generate embeddings)
+          { name: 'embeddings', label: 'Embeddings', group: 'Source (from embeddings)', type: 'array', of: 'array', optional: true,
+            hint: 'Map from Generate embeddings → vectors or embeddings' },
+          { name: 'datapoint_ids', label: 'Datapoint IDs', group: 'Source (from embeddings)', type: 'array', of: 'string', 
+            optional: true, hint: 'Optional; if omitted, IDs are auto-generated' },
+          { name: 'datapoint_id_prefix', label: 'Auto ID prefix', group: 'Source (from embeddings)', optional: true, default: 'dp_' },
+          { name: 'start_index', label: 'Starting index (1-based)', group: 'Source (from embeddings)', type: 'integer', optional: true, default: 1 },
+          { name: 'pad_to', label: 'Pad IDs to N digits', group: 'Source (from embeddings)', type: 'integer', optional: true, default: 6 },
+
+          # Datapoint defaults applied to all when using embeddings
+          { name: 'common_restricts', group: 'Datapoint defaults', type: 'array', of: 'object', properties: [
+            { name: 'namespace' }, { name: 'allowList', type: 'array', of: 'string' }, { name: 'denyList', type: 'array', of: 'string' }
+          ]},
+          { name: 'common_numeric_restricts', group: 'Datapoint defaults', type: 'array', of: 'object', properties: [
+            { name: 'namespace' }, { name: 'op' }, { name: 'valueInt' },
+            { name: 'valueFloat', type: 'number' }, { name: 'valueDouble', type: 'number' }
+          ]},
+          { name: 'common_crowding_tag', group: 'Datapoint defaults', type: 'object', properties: [{ name: 'crowdingAttribute' }] },
+          { name: 'embedding_metadata', group: 'Datapoint defaults', type: 'object' },
+
+          # Advanced: provide full datapoints directly (legacy / power-user)
+          { name: 'datapoints', label: 'Datapoints (advanced)', group: 'Provide full datapoints',
+            type: 'array', of: 'object', optional: true, properties: [
+              { name: 'datapoint_id', label: 'Datapoint ID', optional: false },
+              { name: 'feature_vector', label: 'Feature vector', type: 'array', of: 'number', optional: false },
+              { name: 'restricts', type: 'array', of: 'object', properties: [
+                { name: 'namespace' }, { name: 'allowList', type: 'array', of: 'string' }, { name: 'denyList', type: 'array', of: 'string' }
+              ]},
+              { name: 'numeric_restricts', type: 'array', of: 'object', properties: [
+                { name: 'namespace' }, { name: 'op' }, { name: 'valueInt' },
+                { name: 'valueFloat', type: 'number' }, { name: 'valueDouble', type: 'number' }
+              ]},
+              { name: 'crowding_tag', type: 'object', properties: [{ name: 'crowdingAttribute' }] },
+              { name: 'embedding_metadata', type: 'object' }
+            ]}
         ]
       when 'vector.find_neighbors'
-        [
+       fields = [
           { name: 'endpoint_host', label: 'Public endpoint host (vdb)', hint: 'Overrides connection host just for this call (e.g. 123...vdb.vertexai.goog)', optional: true },
           { name: 'index_endpoint', label: 'Index Endpoint', hint: 'Resource or ID (e.g. projects/.../indexEndpoints/IEP or IEP)', optional: false },
           { name: 'deployed_index_id', label: 'Deployed Index ID', optional: false },
@@ -2153,20 +2178,22 @@
               ]}
           ]
         end
-        fields
+
       else
-        []
+        fields = []
       end
       
       # Add advanced fields if requested
-      if show_advanced
-        fields += [
-          { name: 'model_override', label: 'Override Model', control_type: 'select', group: 'Advanced',
-            pick_list: 'models_dynamic_for_behavior', pick_list_params: { behavior: behavior }, optional: true },
-          { name: 'temperature', label: 'Temperature', type: 'number', group: 'Advanced', hint: '0.0 to 1.0' },
-          { name: 'max_tokens', label: 'Max Tokens', type: 'integer', group: 'Advanced' },
-          { name: 'cache_ttl', label: 'Cache TTL (seconds)', type: 'integer', group: 'Advanced', default: 300 }
-        ]
+      unless behavior.to_s.start_with?('vector.')
+        if show_advanced
+          fields += [
+            { name: 'model_override', label: 'Override Model', control_type: 'select', group: 'Advanced',
+              pick_list: 'models_dynamic_for_behavior', pick_list_params: { behavior: behavior }, optional: true },
+            { name: 'temperature', label: 'Temperature', type: 'number', group: 'Advanced', hint: '0.0 to 1.0' },
+            { name: 'max_tokens', label: 'Max Tokens', type: 'integer', group: 'Advanced' },
+            { name: 'cache_ttl', label: 'Cache TTL (seconds)', type: 'integer', group: 'Advanced', default: 300 }
+          ]
+        end
       end
       
       fields
@@ -2193,7 +2220,11 @@
           { name: 'confidence', type: 'number' }
         ]
       when 'text.embed'
-        [{ name: 'embeddings', type: 'array', of: 'array' }]
+        [
+          { name: 'embeddings', type: 'array', of: 'array' },
+          { name: 'vectors', type: 'array', of: 'object', properties: [ { name: 'feature_vector', type: 'array', of: 'number' } ]},
+          { name: 'count', type: 'integer' }
+        ]
       when 'vector.upsert_datapoints'
         [
           { name: 'ack' }, { name: 'count', type: 'integer' }, { name: 'index' }, { name: 'empty_body', type: 'boolean' }
@@ -2508,7 +2539,60 @@
         host = host.sub(%r{\Ahttps?://}i, '')
         "https://#{host}/#{version}"
       end
-    end
+    end,
+
+    # Wrap raw embedding arrays with an upsert-friendly shape, preserve trace
+    wrap_embeddings_vectors: lambda do |response, input|
+      raw = if response.is_a?(Hash) && response.key?('result')
+        response['result']
+      else
+        response
+      end
+      arr = Array(raw).map { |v| Array(v).map(&:to_f) }
+
+      out = {
+        'embeddings' => arr,
+        'vectors'    => arr.map { |v| { 'feature_vector' => v } },
+        'count'      => arr.length
+      }
+      if response.is_a?(Hash) && response['_trace']
+        out['_trace'] = response['_trace']
+      end
+      out
+    end,
+
+    # Turn embeddings (+ optional options) into IndexDatapoints
+    coerce_embeddings_to_datapoints: lambda do |vars|
+      embeddings = Array(vars['embeddings'])
+      error('No embeddings provided') if embeddings.empty?
+
+      ids     = Array(vars['datapoint_ids'])
+      prefix  = (vars['datapoint_id_prefix'] || 'dp_').to_s
+      start   = (vars['start_index'] || 1).to_i
+      pad_to  = (vars['pad_to'] || 6).to_i
+
+      if ids.empty?
+        ids = embeddings.each_index.map { |i| "#{prefix}#{(start + i).to_s.rjust(pad_to, '0')}" }
+      elsif ids.length != embeddings.length
+        error("datapoint_ids length (#{ids.length}) must match embeddings length (#{embeddings.length})")
+      end
+
+      common_restricts        = vars['common_restricts']
+      common_numeric          = vars['common_numeric_restricts']
+      common_crowding_tag     = vars['common_crowding_tag']
+      common_embedding_meta   = vars['embedding_metadata']
+
+      embeddings.each_with_index.map do |vec, i|
+        {
+          'datapointId'       => ids[i],
+          'featureVector'     => Array(vec).map(&:to_f),
+          'restricts'         => common_restricts,
+          'numericRestricts'  => common_numeric,
+          'crowdingTag'       => common_crowding_tag,
+          'embeddingMetadata' => common_embedding_meta
+        }.compact
+      end
+    end,
 
   },
 
