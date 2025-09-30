@@ -40,6 +40,7 @@ require 'set'
 require 'ripper'
 require 'strscan'
 require 'parser'
+require 'digest'
 
 begin
   require 'parser/current'
@@ -295,7 +296,7 @@ class AstParser
 
     ast, comments = parser.parse_with_comments(buffer)
     associations = (Parser::Source::Comment.associate(ast, comments) rescue {})
-    { ast: nil, comments: {}, diagnostics: @diagnostics + [e.message] }
+    { ast: ast, comments: associations, diagnostics: @diagnostics }
 
   rescue Parser::SyntaxError => e
     { ast: nil, comments: [], diagnostics: @diagnostics + [e.message] }
@@ -482,19 +483,28 @@ class ConnectorWalker
     conn = key_value(root_hash, 'connection')
     return unless conn
 
-    node = IR::Node.new(kind: 'connection', name: 'connection', loc: Util.node_loc(conn), meta: {})
+    # Build meta up front; IR::Node freezes meta, so don't mutate after creation.
+    meta = {}
 
     # base_uri: pair -> value -> literal string (if present)
-    base_uri_pair = dig_pair(conn, %w[base_uri])
-    base_uri_val  = base_uri_pair&.children&.last
-    node.meta[:base_uri_literal] = stringish(base_uri_val) if base_uri_val
+    if (base_uri_pair = dig_pair(conn, %w[base_uri]))
+      if (base_uri_val = base_uri_pair.children.last)
+        if (lit = stringish(base_uri_val))
+          meta[:base_uri_literal] = lit
+        end
+      end
+    end
 
     # authorization.type: pair -> value -> literal string
-    auth_type_pair = dig_pair(conn, %w[authorization type])
-    auth_type_val  = auth_type_pair&.children&.last
-    node.meta[:authorization_type_literal] = stringish(auth_type_val) if auth_type_val
+    if (auth_type_pair = dig_pair(conn, %w[authorization type]))
+      if (auth_type_val = auth_type_pair.children.last)
+        if (lit = stringish(auth_type_val))
+          meta[:authorization_type_literal] = lit
+        end
+      end
+    end
 
-    node
+    IR::Node.new(kind: 'connection', name: 'connection', loc: Util.node_loc(conn), meta: meta)
   end
 
   def extract_docstring(node)
