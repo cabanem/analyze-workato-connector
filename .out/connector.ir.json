@@ -1,0 +1,3881 @@
+{
+  "root": {
+    "id": "n_00d8addb8c320e6f",
+    "kind": "connector",
+    "name": "Vertex AI",
+    "loc": {
+      "line": 1,
+      "column": 0,
+      "length": 139797,
+      "begin": 0,
+      "end": 139797
+    },
+    "meta": {
+      "filename": "connector.rb",
+      "root_keys": [
+        "actions",
+        "connection",
+        "custom_action",
+        "custom_action_help",
+        "methods",
+        "object_definitions",
+        "pick_lists",
+        "test",
+        "title",
+        "triggers",
+        "version"
+      ],
+      "doc": null
+    },
+    "children": [
+      {
+        "id": "n_ed4ab15fd71232d6",
+        "kind": "connection",
+        "name": "connection",
+        "loc": {
+          "line": 8,
+          "column": 14,
+          "length": 9433,
+          "begin": 191,
+          "end": 9624
+        },
+        "meta": {
+          "authorization_type_literal": "multi"
+        },
+        "children": [
+
+        ]
+      },
+      {
+        "id": "n_46f92993f54caddc",
+        "kind": "test",
+        "name": "test",
+        "loc": {
+          "line": 224,
+          "column": 8,
+          "length": 678,
+          "begin": 9637,
+          "end": 10315
+        },
+        "meta": {
+        },
+        "children": [
+
+        ]
+      },
+      {
+        "id": "n_ee3b8428eaa7274f",
+        "kind": "methods",
+        "name": "methods",
+        "loc": {
+          "line": 811,
+          "column": 11,
+          "length": 95394,
+          "begin": 37408,
+          "end": 132802
+        },
+        "meta": {
+        },
+        "children": [
+          {
+            "id": "n_735f3339f67e3723",
+            "kind": "method",
+            "name": "build_payload",
+            "loc": {
+              "line": 817,
+              "column": 19,
+              "length": 7330,
+              "begin": 37600,
+              "end": 44930
+            },
+            "meta": {
+              "args": [
+                "template:",
+                "variables:",
+                "format:"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_c6ed6bd8ad0fbcef",
+            "kind": "method",
+            "name": "enrich_response",
+            "loc": {
+              "line": 1014,
+              "column": 21,
+              "length": 1076,
+              "begin": 44984,
+              "end": 46060
+            },
+            "meta": {
+              "args": [
+                "response:",
+                "metadata:"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_e52c88457cbb1082",
+            "kind": "method",
+            "name": "extract_response",
+            "loc": {
+              "line": 1040,
+              "column": 22,
+              "length": 1179,
+              "begin": 46111,
+              "end": 47290
+            },
+            "meta": {
+              "args": [
+                "data:",
+                "path:",
+                "format:"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_4c55ba39e0f8a2fa",
+            "kind": "method",
+            "name": "http_request",
+            "loc": {
+              "line": 1069,
+              "column": 18,
+              "length": 3959,
+              "begin": 47340,
+              "end": 51299
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "method:",
+                "url:",
+                "payload:",
+                "headers:",
+                "retry_config:",
+                "request_format:"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_6fa4e7c38dbc3bf7",
+            "kind": "method",
+            "name": "transform_data",
+            "loc": {
+              "line": 1162,
+              "column": 20,
+              "length": 778,
+              "begin": 51348,
+              "end": 52126
+            },
+            "meta": {
+              "args": [
+                "input:",
+                "from_format:",
+                "to_format:",
+                "connection:"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_40d65e2414e179bf",
+            "kind": "method",
+            "name": "validate_input",
+            "loc": {
+              "line": 1184,
+              "column": 20,
+              "length": 4248,
+              "begin": 52176,
+              "end": 56424
+            },
+            "meta": {
+              "args": [
+                "data:",
+                "schema:",
+                "constraints:"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_a7bb99c191d71eac",
+            "kind": "method",
+            "name": "with_resilience",
+            "loc": {
+              "line": 1288,
+              "column": 21,
+              "length": 2187,
+              "begin": 56473,
+              "end": 58660
+            },
+            "meta": {
+              "args": [
+                "operation:",
+                "config:",
+                "task:",
+                "connection:",
+                "blockarg"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_c45bd0d836940af8",
+            "kind": "method",
+            "name": "execute_pipeline",
+            "loc": {
+              "line": 1346,
+              "column": 22,
+              "length": 2915,
+              "begin": 58826,
+              "end": 61741
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "operation",
+                "input",
+                "config"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_08758123084516be",
+            "kind": "method",
+            "name": "behavior_registry",
+            "loc": {
+              "line": 1445,
+              "column": 23,
+              "length": 9985,
+              "begin": 61968,
+              "end": 71953
+            },
+            "meta": {
+              "args": [
+
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_e618b10b6c0d1dfc",
+            "kind": "method",
+            "name": "configuration_registry",
+            "loc": {
+              "line": 1702,
+              "column": 28,
+              "length": 1079,
+              "begin": 72036,
+              "end": 73115
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "user_config"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_d264c41acce19399",
+            "kind": "method",
+            "name": "execute_behavior",
+            "loc": {
+              "line": 1744,
+              "column": 22,
+              "length": 2835,
+              "begin": 73193,
+              "end": 76028
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "behavior",
+                "input",
+                "user_config"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_f833a200fc51f529",
+            "kind": "method",
+            "name": "add_upsert_ack",
+            "loc": {
+              "line": 1815,
+              "column": 20,
+              "length": 304,
+              "begin": 76213,
+              "end": 76517
+            },
+            "meta": {
+              "args": [
+                "response",
+                "input"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_bfd076c154d47a15",
+            "kind": "method",
+            "name": "add_word_count",
+            "loc": {
+              "line": 1825,
+              "column": 20,
+              "length": 290,
+              "begin": 76540,
+              "end": 76830
+            },
+            "meta": {
+              "args": [
+                "response",
+                "input"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_8c827b6edaebcdbb",
+            "kind": "method",
+            "name": "apply_template",
+            "loc": {
+              "line": 1840,
+              "column": 20,
+              "length": 238,
+              "begin": 76884,
+              "end": 77122
+            },
+            "meta": {
+              "args": [
+                "template",
+                "variables"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_9d13fc2bf8078032",
+            "kind": "method",
+            "name": "approx_token_count",
+            "loc": {
+              "line": 1851,
+              "column": 24,
+              "length": 107,
+              "begin": 77184,
+              "end": 77291
+            },
+            "meta": {
+              "args": [
+                "text"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_925548b6f4bc6f8c",
+            "kind": "method",
+            "name": "augment_vector_context",
+            "loc": {
+              "line": 1856,
+              "column": 28,
+              "length": 711,
+              "begin": 77322,
+              "end": 78033
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "local_input"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_17c58a6a0852b6b7",
+            "kind": "method",
+            "name": "build_endpoint_url",
+            "loc": {
+              "line": 1876,
+              "column": 24,
+              "length": 3050,
+              "begin": 78085,
+              "end": 81135
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "endpoint_config",
+                "input"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_3fdea89359c9c2d6",
+            "kind": "method",
+            "name": "build_generation_config",
+            "loc": {
+              "line": 1939,
+              "column": 29,
+              "length": 329,
+              "begin": 81171,
+              "end": 81500
+            },
+            "meta": {
+              "args": [
+                "vars"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_c069b0e47f02acde",
+            "kind": "method",
+            "name": "build_headers",
+            "loc": {
+              "line": 1950,
+              "column": 19,
+              "length": 147,
+              "begin": 81550,
+              "end": 81697
+            },
+            "meta": {
+              "args": [
+                "connection"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_4cd0d50b5132a56e",
+            "kind": "method",
+            "name": "check_rate_limit",
+            "loc": {
+              "line": 1958,
+              "column": 22,
+              "length": 661,
+              "begin": 81742,
+              "end": 82403
+            },
+            "meta": {
+              "args": [
+                "operation",
+                "limits"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_0fa3ed9ab2f48f04",
+            "kind": "method",
+            "name": "chunk_by_tokens",
+            "loc": {
+              "line": 1976,
+              "column": 21,
+              "length": 1696,
+              "begin": 82427,
+              "end": 84123
+            },
+            "meta": {
+              "args": [
+                "items:",
+                "token_ceiling:",
+                "max_items:",
+                "max_body_bytes:"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_15eed216496d696d",
+            "kind": "method",
+            "name": "coerce_embeddings_to_datapoints",
+            "loc": {
+              "line": 2031,
+              "column": 37,
+              "length": 1241,
+              "begin": 84227,
+              "end": 85468
+            },
+            "meta": {
+              "args": [
+                "vars"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_bc999617c9c294a3",
+            "kind": "method",
+            "name": "coerce_kwargs",
+            "loc": {
+              "line": 2063,
+              "column": 19,
+              "length": 886,
+              "begin": 85490,
+              "end": 86376
+            },
+            "meta": {
+              "args": [
+                "*args",
+                "**kwargs"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_b669d9b85285a1a7",
+            "kind": "method",
+            "name": "confidence_from_distance",
+            "loc": {
+              "line": 2090,
+              "column": 30,
+              "length": 615,
+              "begin": 86413,
+              "end": 87028
+            },
+            "meta": {
+              "args": [
+                "distance",
+                "metric",
+                "feature_norm_type"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_92f7b1422419cdd5",
+            "kind": "method",
+            "name": "deep_copy",
+            "loc": {
+              "line": 2111,
+              "column": 15,
+              "length": 43,
+              "begin": 87076,
+              "end": 87119
+            },
+            "meta": {
+              "args": [
+                "obj"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_f42dd856158874f0",
+            "kind": "method",
+            "name": "discover_index_config",
+            "loc": {
+              "line": 2113,
+              "column": 27,
+              "length": 1500,
+              "begin": 87149,
+              "end": 88649
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "input"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_9651beb959b3e88c",
+            "kind": "method",
+            "name": "each_in_scope",
+            "loc": {
+              "line": 2147,
+              "column": 19,
+              "length": 273,
+              "begin": 88743,
+              "end": 89016
+            },
+            "meta": {
+              "args": [
+                "data",
+                "scope"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_3ece5dced310c4de",
+            "kind": "method",
+            "name": "error_hint",
+            "loc": {
+              "line": 2159,
+              "column": 16,
+              "length": 565,
+              "begin": 89054,
+              "end": 89619
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "code",
+                "status"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_cd9d44410ca551c6",
+            "kind": "method",
+            "name": "extract_ids_for_read",
+            "loc": {
+              "line": 2177,
+              "column": 26,
+              "length": 984,
+              "begin": 89717,
+              "end": 90701
+            },
+            "meta": {
+              "args": [
+                "vars"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_f89ff50d1c180311",
+            "kind": "method",
+            "name": "extract_user_config",
+            "loc": {
+              "line": 2204,
+              "column": 25,
+              "length": 1397,
+              "begin": 90769,
+              "end": 92166
+            },
+            "meta": {
+              "args": [
+                "input",
+                "cfg_enabled",
+                "config_ctx"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_24530d8c73551fc9",
+            "kind": "method",
+            "name": "execute_batch_behavior",
+            "loc": {
+              "line": 2241,
+              "column": 28,
+              "length": 2671,
+              "begin": 92221,
+              "end": 94892
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "behavior",
+                "items",
+                "batch_size",
+                "strategy",
+                "options"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_6288e3821588d03a",
+            "kind": "method",
+            "name": "format_user_error",
+            "loc": {
+              "line": 2314,
+              "column": 23,
+              "length": 400,
+              "begin": 94939,
+              "end": 95339
+            },
+            "meta": {
+              "args": [
+                "err"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_70d6d579013c1a6b",
+            "kind": "method",
+            "name": "get_behavior_input_fields",
+            "loc": {
+              "line": 2326,
+              "column": 31,
+              "length": 19673,
+              "begin": 95417,
+              "end": 115090
+            },
+            "meta": {
+              "args": [
+                "behavior",
+                "show_advanced",
+                "ui_cfg"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_c86870237860409b",
+            "kind": "method",
+            "name": "get_behavior_output_fields",
+            "loc": {
+              "line": 2646,
+              "column": 32,
+              "length": 3245,
+              "begin": 115162,
+              "end": 118407
+            },
+            "meta": {
+              "args": [
+                "behavior"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_b23ce8da46845469",
+            "kind": "method",
+            "name": "list_publisher_models",
+            "loc": {
+              "line": 2727,
+              "column": 27,
+              "length": 758,
+              "begin": 118482,
+              "end": 119240
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "publisher:"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_c30c802daceb012b",
+            "kind": "method",
+            "name": "memo_store",
+            "loc": {
+              "line": 2746,
+              "column": 16,
+              "length": 25,
+              "begin": 119259,
+              "end": 119284
+            },
+            "meta": {
+              "args": [
+
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_46020d74cfb9c27e",
+            "kind": "method",
+            "name": "memo_get",
+            "loc": {
+              "line": 2748,
+              "column": 14,
+              "length": 178,
+              "begin": 119301,
+              "end": 119479
+            },
+            "meta": {
+              "args": [
+                "key"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_22b5054d2258d8eb",
+            "kind": "method",
+            "name": "memo_put",
+            "loc": {
+              "line": 2756,
+              "column": 14,
+              "length": 145,
+              "begin": 119496,
+              "end": 119641
+            },
+            "meta": {
+              "args": [
+                "key",
+                "val",
+                "ttl"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_c67de61d21baba1a",
+            "kind": "method",
+            "name": "normalize_find_neighbors",
+            "loc": {
+              "line": 2762,
+              "column": 30,
+              "length": 2416,
+              "begin": 119750,
+              "end": 122166
+            },
+            "meta": {
+              "args": [
+                "resp",
+                "input"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_4d9184244f0322ac",
+            "kind": "method",
+            "name": "normalize_http_error",
+            "loc": {
+              "line": 2820,
+              "column": 26,
+              "length": 1256,
+              "begin": 122195,
+              "end": 123451
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "code:",
+                "body:",
+                "headers:",
+                "message:",
+                "url:",
+                "corr_id:",
+                "attempt:",
+                "duration_ms:"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_09220d3b79a996aa",
+            "kind": "method",
+            "name": "normalize_read_index_datapoints",
+            "loc": {
+              "line": 2859,
+              "column": 37,
+              "length": 704,
+              "begin": 123491,
+              "end": 124195
+            },
+            "meta": {
+              "args": [
+                "resp",
+                "_input"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_715f0b4adbf4d9e5",
+            "kind": "method",
+            "name": "normalize_safety_settings",
+            "loc": {
+              "line": 2876,
+              "column": 31,
+              "length": 1080,
+              "begin": 124261,
+              "end": 125341
+            },
+            "meta": {
+              "args": [
+                "input"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_421dc603a22e9fb5",
+            "kind": "method",
+            "name": "parse_retry_after",
+            "loc": {
+              "line": 2908,
+              "column": 23,
+              "length": 257,
+              "begin": 125386,
+              "end": 125643
+            },
+            "meta": {
+              "args": [
+                "headers"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_6ebc8efc175b9297",
+            "kind": "method",
+            "name": "qualify_resource",
+            "loc": {
+              "line": 2917,
+              "column": 22,
+              "length": 415,
+              "begin": 125748,
+              "end": 126163
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "type",
+                "value"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_b66911f16e5dc874",
+            "kind": "method",
+            "name": "resolve_model_version",
+            "loc": {
+              "line": 2929,
+              "column": 27,
+              "length": 680,
+              "begin": 126248,
+              "end": 126928
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "short"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_d7d9f9252ddfd445",
+            "kind": "method",
+            "name": "retryable_http_code",
+            "loc": {
+              "line": 2951,
+              "column": 25,
+              "length": 78,
+              "begin": 126975,
+              "end": 127053
+            },
+            "meta": {
+              "args": [
+                "code"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_ba8ca8a529ef2680",
+            "kind": "method",
+            "name": "safe_mean",
+            "loc": {
+              "line": 2955,
+              "column": 15,
+              "length": 120,
+              "begin": 127071,
+              "end": 127191
+            },
+            "meta": {
+              "args": [
+                "arr"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_622cde4ad7374526",
+            "kind": "method",
+            "name": "select_model",
+            "loc": {
+              "line": 2962,
+              "column": 18,
+              "length": 2087,
+              "begin": 127240,
+              "end": 129327
+            },
+            "meta": {
+              "args": [
+                "behavior_def",
+                "cfg",
+                "input"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_ce3e51ca569e8339",
+            "kind": "method",
+            "name": "telemetry_envelope_fields",
+            "loc": {
+              "line": 3007,
+              "column": 31,
+              "length": 325,
+              "begin": 129409,
+              "end": 129734
+            },
+            "meta": {
+              "args": [
+
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_78eae672a9979cd4",
+            "kind": "method",
+            "name": "trace_fields",
+            "loc": {
+              "line": 3017,
+              "column": 18,
+              "length": 525,
+              "begin": 129754,
+              "end": 130279
+            },
+            "meta": {
+              "args": [
+
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_d6e43f892de4621a",
+            "kind": "method",
+            "name": "to_query",
+            "loc": {
+              "line": 3034,
+              "column": 14,
+              "length": 579,
+              "begin": 130338,
+              "end": 130917
+            },
+            "meta": {
+              "args": [
+                "params"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_a4875f92b4fcd209",
+            "kind": "method",
+            "name": "value_present",
+            "loc": {
+              "line": 3057,
+              "column": 19,
+              "length": 174,
+              "begin": 131003,
+              "end": 131177
+            },
+            "meta": {
+              "args": [
+                "v"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_3c7495c72c49ca52",
+            "kind": "method",
+            "name": "vector_search_base",
+            "loc": {
+              "line": 3065,
+              "column": 24,
+              "length": 653,
+              "begin": 131289,
+              "end": 131942
+            },
+            "meta": {
+              "args": [
+                "connection",
+                "input"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_4277dd6ab051e7ce",
+            "kind": "method",
+            "name": "wrap_embeddings_vectors",
+            "loc": {
+              "line": 3083,
+              "column": 29,
+              "length": 745,
+              "begin": 132052,
+              "end": 132797
+            },
+            "meta": {
+              "args": [
+                "response",
+                "input"
+              ]
+            },
+            "children": [
+
+            ]
+          }
+        ]
+      },
+      {
+        "id": "n_aaa50cc7b82c38d3",
+        "kind": "object_definitions",
+        "name": "object_definitions",
+        "loc": {
+          "line": 3286,
+          "column": 22,
+          "length": 1004,
+          "begin": 138392,
+          "end": 139396
+        },
+        "meta": {
+        },
+        "children": [
+          {
+            "id": "n_5428152129bdb2da",
+            "kind": "object_definition",
+            "name": "generation_config",
+            "loc": {
+              "line": 3287,
+              "column": 23,
+              "length": 495,
+              "begin": 138417,
+              "end": 138912
+            },
+            "meta": {
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_928c4d34d3b843aa",
+            "kind": "object_definition",
+            "name": "safety_settings",
+            "loc": {
+              "line": 3299,
+              "column": 21,
+              "length": 452,
+              "begin": 138940,
+              "end": 139392
+            },
+            "meta": {
+            },
+            "children": [
+
+            ]
+          }
+        ]
+      },
+      {
+        "id": "n_ad0dd4944e093039",
+        "kind": "actions",
+        "name": "actions",
+        "loc": {
+          "line": 248,
+          "column": 11,
+          "length": 26772,
+          "begin": 10489,
+          "end": 37261
+        },
+        "meta": {
+        },
+        "children": [
+          {
+            "id": "n_9aa5d2325aa633a9",
+            "kind": "action",
+            "name": "batch_operation",
+            "loc": {
+              "line": 254,
+              "column": 21,
+              "length": 4210,
+              "begin": 10651,
+              "end": 14861
+            },
+            "meta": {
+              "keys": [
+                "config_fields",
+                "execute",
+                "input_fields",
+                "output_fields",
+                "sample_output",
+                "title"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_4efbd4d4a10f1807",
+            "kind": "action",
+            "name": "vertex_operation",
+            "loc": {
+              "line": 356,
+              "column": 22,
+              "length": 5327,
+              "begin": 14908,
+              "end": 20235
+            },
+            "meta": {
+              "keys": [
+                "config_fields",
+                "execute",
+                "input_fields",
+                "output_fields",
+                "sample_output",
+                "title"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_ca0d710017151d8b",
+            "kind": "action",
+            "name": "discover_index_config",
+            "loc": {
+              "line": 462,
+              "column": 27,
+              "length": 1610,
+              "begin": 20404,
+              "end": 22014
+            },
+            "meta": {
+              "keys": [
+                "description",
+                "execute",
+                "input_fields",
+                "output_fields",
+                "sample_output",
+                "title"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_7e4687040a3946be",
+            "kind": "action",
+            "name": "classify_text",
+            "loc": {
+              "line": 502,
+              "column": 19,
+              "length": 2748,
+              "begin": 22046,
+              "end": 24794
+            },
+            "meta": {
+              "keys": [
+                "config_fields",
+                "description",
+                "execute",
+                "input_fields",
+                "output_fields",
+                "sample_output",
+                "title"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_45e8d3b9be86d48a",
+            "kind": "action",
+            "name": "generate_text",
+            "loc": {
+              "line": 560,
+              "column": 19,
+              "length": 6545,
+              "begin": 24815,
+              "end": 31360
+            },
+            "meta": {
+              "keys": [
+                "config_fields",
+                "description",
+                "execute",
+                "input_fields",
+                "output_fields",
+                "sample_output",
+                "title"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_36bde34f7b478d55",
+            "kind": "action",
+            "name": "find_neighbors",
+            "loc": {
+              "line": 680,
+              "column": 20,
+              "length": 670,
+              "begin": 31402,
+              "end": 32072
+            },
+            "meta": {
+              "keys": [
+                "description",
+                "execute",
+                "input_fields",
+                "output_fields",
+                "title"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_f806a6dad72db3a0",
+            "kind": "action",
+            "name": "read_index_datapoints",
+            "loc": {
+              "line": 696,
+              "column": 27,
+              "length": 1883,
+              "begin": 32101,
+              "end": 33984
+            },
+            "meta": {
+              "keys": [
+                "config_fields",
+                "description",
+                "execute",
+                "input_fields",
+                "output_fields",
+                "sample_output",
+                "title"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_517e11efa6e55793",
+            "kind": "action",
+            "name": "upsert_index_datapoints",
+            "loc": {
+              "line": 740,
+              "column": 29,
+              "length": 693,
+              "begin": 34015,
+              "end": 34708
+            },
+            "meta": {
+              "keys": [
+                "description",
+                "execute",
+                "input_fields",
+                "output_fields",
+                "title"
+              ]
+            },
+            "children": [
+
+            ]
+          },
+          {
+            "id": "n_1a22dc4f9c934cc8",
+            "kind": "action",
+            "name": "generate_embeddings",
+            "loc": {
+              "line": 757,
+              "column": 25,
+              "length": 2505,
+              "begin": 34752,
+              "end": 37257
+            },
+            "meta": {
+              "keys": [
+                "config_fields",
+                "description",
+                "execute",
+                "input_fields",
+                "output_fields",
+                "title"
+              ]
+            },
+            "children": [
+
+            ]
+          }
+        ]
+      },
+      {
+        "id": "n_309b594bada0bd28",
+        "kind": "triggers",
+        "name": "triggers",
+        "loc": {
+          "line": 3314,
+          "column": 12,
+          "length": 2,
+          "begin": 139534,
+          "end": 139536
+        },
+        "meta": {
+        },
+        "children": [
+
+        ]
+      },
+      {
+        "id": "n_0658cf6cb3dd0ad4",
+        "kind": "pick_lists",
+        "name": "pick_lists",
+        "loc": {
+          "line": 3114,
+          "column": 14,
+          "length": 5295,
+          "begin": 132932,
+          "end": 138227
+        },
+        "meta": {
+        },
+        "children": [
+
+        ]
+      }
+    ]
+  },
+  "issues": [
+    {
+      "severity": "info",
+      "code": "unused_method",
+      "message": "methods.add_upsert_ack is never called",
+      "loc": {
+      },
+      "context": {
+        "method": "add_upsert_ack"
+      }
+    },
+    {
+      "severity": "info",
+      "code": "unused_method",
+      "message": "methods.add_word_count is never called",
+      "loc": {
+      },
+      "context": {
+        "method": "add_word_count"
+      }
+    },
+    {
+      "severity": "info",
+      "code": "unused_method",
+      "message": "methods.coerce_kwargs is never called",
+      "loc": {
+      },
+      "context": {
+        "method": "coerce_kwargs"
+      }
+    },
+    {
+      "severity": "info",
+      "code": "unused_method",
+      "message": "methods.normalize_find_neighbors is never called",
+      "loc": {
+      },
+      "context": {
+        "method": "normalize_find_neighbors"
+      }
+    },
+    {
+      "severity": "info",
+      "code": "unused_method",
+      "message": "methods.normalize_read_index_datapoints is never called",
+      "loc": {
+      },
+      "context": {
+        "method": "normalize_read_index_datapoints"
+      }
+    },
+    {
+      "severity": "info",
+      "code": "unused_method",
+      "message": "methods.to_query is never called",
+      "loc": {
+      },
+      "context": {
+        "method": "to_query"
+      }
+    },
+    {
+      "severity": "info",
+      "code": "unused_method",
+      "message": "methods.wrap_embeddings_vectors is never called",
+      "loc": {
+      },
+      "context": {
+        "method": "wrap_embeddings_vectors"
+      }
+    }
+  ],
+  "graph": {
+    "nodes": {
+      "connector#test": {
+        "label": "connector#test",
+        "kind": "lambda"
+      },
+      "method:list_publisher_models": {
+        "label": "method:list_publisher_models",
+        "kind": "method"
+      },
+      "method:build_endpoint_url": {
+        "label": "method:build_endpoint_url",
+        "kind": "method"
+      },
+      "method:http_request": {
+        "label": "method:http_request",
+        "kind": "method"
+      },
+      "method:build_headers": {
+        "label": "method:build_headers",
+        "kind": "method"
+      },
+      "method:build_payload": {
+        "label": "method:build_payload",
+        "kind": "method"
+      },
+      "method:apply_template": {
+        "label": "method:apply_template",
+        "kind": "method"
+      },
+      "method:build_generation_config": {
+        "label": "method:build_generation_config",
+        "kind": "method"
+      },
+      "method:normalize_safety_settings": {
+        "label": "method:normalize_safety_settings",
+        "kind": "method"
+      },
+      "method:coerce_embeddings_to_datapoints": {
+        "label": "method:coerce_embeddings_to_datapoints",
+        "kind": "method"
+      },
+      "method:extract_ids_for_read": {
+        "label": "method:extract_ids_for_read",
+        "kind": "method"
+      },
+      "method:enrich_response": {
+        "label": "method:enrich_response",
+        "kind": "method"
+      },
+      "method:enrich_response::http#delete(_trace)": {
+        "label": "DELETE _trace",
+        "kind": "http"
+      },
+      "method:enrich_response::http#delete(_http)": {
+        "label": "DELETE _http",
+        "kind": "http"
+      },
+      "method:extract_response": {
+        "label": "method:extract_response",
+        "kind": "method"
+      },
+      "method:http_request::http#get(...)": {
+        "label": "GET (dynamic)",
+        "kind": "http"
+      },
+      "method:http_request::http#post(...)": {
+        "label": "POST (dynamic)",
+        "kind": "http"
+      },
+      "method:http_request::http#put(...)": {
+        "label": "PUT (dynamic)",
+        "kind": "http"
+      },
+      "method:http_request::http#delete(...)": {
+        "label": "DELETE (dynamic)",
+        "kind": "http"
+      },
+      "method:normalize_http_error": {
+        "label": "method:normalize_http_error",
+        "kind": "method"
+      },
+      "method:format_user_error": {
+        "label": "method:format_user_error",
+        "kind": "method"
+      },
+      "method:transform_data": {
+        "label": "method:transform_data",
+        "kind": "method"
+      },
+      "method:validate_input": {
+        "label": "method:validate_input",
+        "kind": "method"
+      },
+      "method:each_in_scope": {
+        "label": "method:each_in_scope",
+        "kind": "method"
+      },
+      "method:value_present": {
+        "label": "method:value_present",
+        "kind": "method"
+      },
+      "method:with_resilience": {
+        "label": "method:with_resilience",
+        "kind": "method"
+      },
+      "method:check_rate_limit": {
+        "label": "method:check_rate_limit",
+        "kind": "method"
+      },
+      "method:memo_get": {
+        "label": "method:memo_get",
+        "kind": "method"
+      },
+      "method:memo_put": {
+        "label": "method:memo_put",
+        "kind": "method"
+      },
+      "method:execute_pipeline": {
+        "label": "method:execute_pipeline",
+        "kind": "method"
+      },
+      "method:deep_copy": {
+        "label": "method:deep_copy",
+        "kind": "method"
+      },
+      "method:behavior_registry": {
+        "label": "method:behavior_registry",
+        "kind": "method"
+      },
+      "method:configuration_registry": {
+        "label": "method:configuration_registry",
+        "kind": "method"
+      },
+      "method:execute_behavior": {
+        "label": "method:execute_behavior",
+        "kind": "method"
+      },
+      "method:select_model": {
+        "label": "method:select_model",
+        "kind": "method"
+      },
+      "method:augment_vector_context": {
+        "label": "method:augment_vector_context",
+        "kind": "method"
+      },
+      "method:add_upsert_ack": {
+        "label": "method:add_upsert_ack",
+        "kind": "method"
+      },
+      "method:add_word_count": {
+        "label": "method:add_word_count",
+        "kind": "method"
+      },
+      "method:approx_token_count": {
+        "label": "method:approx_token_count",
+        "kind": "method"
+      },
+      "method:discover_index_config": {
+        "label": "method:discover_index_config",
+        "kind": "method"
+      },
+      "method:qualify_resource": {
+        "label": "method:qualify_resource",
+        "kind": "method"
+      },
+      "method:vector_search_base": {
+        "label": "method:vector_search_base",
+        "kind": "method"
+      },
+      "method:resolve_model_version": {
+        "label": "method:resolve_model_version",
+        "kind": "method"
+      },
+      "method:chunk_by_tokens": {
+        "label": "method:chunk_by_tokens",
+        "kind": "method"
+      },
+      "method:coerce_kwargs": {
+        "label": "method:coerce_kwargs",
+        "kind": "method"
+      },
+      "method:confidence_from_distance": {
+        "label": "method:confidence_from_distance",
+        "kind": "method"
+      },
+      "method:error_hint": {
+        "label": "method:error_hint",
+        "kind": "method"
+      },
+      "method:extract_user_config": {
+        "label": "method:extract_user_config",
+        "kind": "method"
+      },
+      "method:execute_batch_behavior": {
+        "label": "method:execute_batch_behavior",
+        "kind": "method"
+      },
+      "method:get_behavior_input_fields": {
+        "label": "method:get_behavior_input_fields",
+        "kind": "method"
+      },
+      "method:get_behavior_output_fields": {
+        "label": "method:get_behavior_output_fields",
+        "kind": "method"
+      },
+      "method:memo_store": {
+        "label": "method:memo_store",
+        "kind": "method"
+      },
+      "method:normalize_find_neighbors": {
+        "label": "method:normalize_find_neighbors",
+        "kind": "method"
+      },
+      "method:safe_mean": {
+        "label": "method:safe_mean",
+        "kind": "method"
+      },
+      "method:retryable_http_code": {
+        "label": "method:retryable_http_code",
+        "kind": "method"
+      },
+      "method:parse_retry_after": {
+        "label": "method:parse_retry_after",
+        "kind": "method"
+      },
+      "method:normalize_read_index_datapoints": {
+        "label": "method:normalize_read_index_datapoints",
+        "kind": "method"
+      },
+      "method:telemetry_envelope_fields": {
+        "label": "method:telemetry_envelope_fields",
+        "kind": "method"
+      },
+      "method:trace_fields": {
+        "label": "method:trace_fields",
+        "kind": "method"
+      },
+      "method:to_query": {
+        "label": "method:to_query",
+        "kind": "method"
+      },
+      "method:wrap_embeddings_vectors": {
+        "label": "method:wrap_embeddings_vectors",
+        "kind": "method"
+      },
+      "action:batch_operation#input_fields": {
+        "label": "action:batch_operation#input_fields",
+        "kind": "lambda"
+      },
+      "action:batch_operation#execute": {
+        "label": "action:batch_operation#execute",
+        "kind": "lambda"
+      },
+      "action:batch_operation#output_fields": {
+        "label": "action:batch_operation#output_fields",
+        "kind": "lambda"
+      },
+      "action:batch_operation#sample_output": {
+        "label": "action:batch_operation#sample_output",
+        "kind": "lambda"
+      },
+      "action:vertex_operation#input_fields": {
+        "label": "action:vertex_operation#input_fields",
+        "kind": "lambda"
+      },
+      "action:vertex_operation#execute": {
+        "label": "action:vertex_operation#execute",
+        "kind": "lambda"
+      },
+      "action:vertex_operation#output_fields": {
+        "label": "action:vertex_operation#output_fields",
+        "kind": "lambda"
+      },
+      "action:vertex_operation#sample_output": {
+        "label": "action:vertex_operation#sample_output",
+        "kind": "lambda"
+      },
+      "action:discover_index_config#input_fields": {
+        "label": "action:discover_index_config#input_fields",
+        "kind": "lambda"
+      },
+      "action:discover_index_config#execute": {
+        "label": "action:discover_index_config#execute",
+        "kind": "lambda"
+      },
+      "action:discover_index_config#output_fields": {
+        "label": "action:discover_index_config#output_fields",
+        "kind": "lambda"
+      },
+      "action:discover_index_config#sample_output": {
+        "label": "action:discover_index_config#sample_output",
+        "kind": "lambda"
+      },
+      "action:classify_text#input_fields": {
+        "label": "action:classify_text#input_fields",
+        "kind": "lambda"
+      },
+      "action:classify_text#execute": {
+        "label": "action:classify_text#execute",
+        "kind": "lambda"
+      },
+      "action:classify_text#output_fields": {
+        "label": "action:classify_text#output_fields",
+        "kind": "lambda"
+      },
+      "action:classify_text#sample_output": {
+        "label": "action:classify_text#sample_output",
+        "kind": "lambda"
+      },
+      "action:generate_text#input_fields": {
+        "label": "action:generate_text#input_fields",
+        "kind": "lambda"
+      },
+      "action:generate_text#execute": {
+        "label": "action:generate_text#execute",
+        "kind": "lambda"
+      },
+      "action:generate_text#output_fields": {
+        "label": "action:generate_text#output_fields",
+        "kind": "lambda"
+      },
+      "action:generate_text#sample_output": {
+        "label": "action:generate_text#sample_output",
+        "kind": "lambda"
+      },
+      "action:find_neighbors#input_fields": {
+        "label": "action:find_neighbors#input_fields",
+        "kind": "lambda"
+      },
+      "action:find_neighbors#execute": {
+        "label": "action:find_neighbors#execute",
+        "kind": "lambda"
+      },
+      "action:find_neighbors#output_fields": {
+        "label": "action:find_neighbors#output_fields",
+        "kind": "lambda"
+      },
+      "action:read_index_datapoints#input_fields": {
+        "label": "action:read_index_datapoints#input_fields",
+        "kind": "lambda"
+      },
+      "action:read_index_datapoints#execute": {
+        "label": "action:read_index_datapoints#execute",
+        "kind": "lambda"
+      },
+      "action:read_index_datapoints#output_fields": {
+        "label": "action:read_index_datapoints#output_fields",
+        "kind": "lambda"
+      },
+      "action:read_index_datapoints#sample_output": {
+        "label": "action:read_index_datapoints#sample_output",
+        "kind": "lambda"
+      },
+      "action:upsert_index_datapoints#input_fields": {
+        "label": "action:upsert_index_datapoints#input_fields",
+        "kind": "lambda"
+      },
+      "action:upsert_index_datapoints#execute": {
+        "label": "action:upsert_index_datapoints#execute",
+        "kind": "lambda"
+      },
+      "action:upsert_index_datapoints#output_fields": {
+        "label": "action:upsert_index_datapoints#output_fields",
+        "kind": "lambda"
+      },
+      "action:generate_embeddings#input_fields": {
+        "label": "action:generate_embeddings#input_fields",
+        "kind": "lambda"
+      },
+      "action:generate_embeddings#execute": {
+        "label": "action:generate_embeddings#execute",
+        "kind": "lambda"
+      },
+      "action:generate_embeddings#output_fields": {
+        "label": "action:generate_embeddings#output_fields",
+        "kind": "lambda"
+      }
+    },
+    "edges": [
+      [
+        "connector#test",
+        "method:list_publisher_models",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "connector#test",
+        "method:build_endpoint_url",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "connector#test",
+        "method:http_request",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "connector#test",
+        "method:build_headers",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:build_payload",
+        "method:apply_template",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:build_payload",
+        "method:build_generation_config",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:build_payload",
+        "method:normalize_safety_settings",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:build_payload",
+        "method:coerce_embeddings_to_datapoints",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:build_payload",
+        "method:extract_ids_for_read",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:enrich_response",
+        "method:enrich_response::http#delete(_trace)",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:enrich_response",
+        "method:enrich_response::http#delete(_http)",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:http_request",
+        "method:http_request::http#get(...)",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:http_request",
+        "method:http_request::http#post(...)",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:http_request",
+        "method:http_request::http#put(...)",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:http_request",
+        "method:http_request::http#delete(...)",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:http_request",
+        "method:http_request",
+        {
+          "label": "after_error_response"
+        }
+      ],
+      [
+        "method:http_request",
+        "method:normalize_http_error",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:http_request",
+        "method:format_user_error",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:transform_data",
+        "method:http_request",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:validate_input",
+        "method:each_in_scope",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:validate_input",
+        "method:value_present",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:with_resilience",
+        "method:check_rate_limit",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:with_resilience",
+        "method:memo_get",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:with_resilience",
+        "method:http_request",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:with_resilience",
+        "method:memo_put",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_pipeline",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_pipeline",
+        "method:validate_input",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_pipeline",
+        "method:transform_data",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_pipeline",
+        "method:build_payload",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_pipeline",
+        "method:build_endpoint_url",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_pipeline",
+        "method:with_resilience",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_pipeline",
+        "method:build_headers",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_pipeline",
+        "method:extract_response",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_pipeline",
+        "method:enrich_response",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_behavior",
+        "method:behavior_registry",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_behavior",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_behavior",
+        "method:configuration_registry",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_behavior",
+        "method:select_model",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_behavior",
+        "method:memo_get",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_behavior",
+        "method:augment_vector_context",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_behavior",
+        "method:execute_pipeline",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_behavior",
+        "method:memo_put",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:augment_vector_context",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:augment_vector_context",
+        "method:value_present",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:augment_vector_context",
+        "method:discover_index_config",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:build_endpoint_url",
+        "method:qualify_resource",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:build_endpoint_url",
+        "method:vector_search_base",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:build_endpoint_url",
+        "method:resolve_model_version",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:check_rate_limit",
+        "method:memo_get",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:check_rate_limit",
+        "method:memo_put",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:chunk_by_tokens",
+        "method:approx_token_count",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:discover_index_config",
+        "method:qualify_resource",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:discover_index_config",
+        "method:memo_get",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:discover_index_config",
+        "method:build_endpoint_url",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:discover_index_config",
+        "method:http_request",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:discover_index_config",
+        "method:build_headers",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:discover_index_config",
+        "method:memo_put",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:extract_user_config",
+        "method:value_present",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_batch_behavior",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_batch_behavior",
+        "method:chunk_by_tokens",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:execute_batch_behavior",
+        "method:execute_behavior",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:get_behavior_input_fields",
+        "method:behavior_registry",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:list_publisher_models",
+        "method:memo_get",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:list_publisher_models",
+        "method:build_endpoint_url",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:list_publisher_models",
+        "method:http_request",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:list_publisher_models",
+        "method:build_headers",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:list_publisher_models",
+        "method:memo_put",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:memo_get",
+        "method:memo_store",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:memo_put",
+        "method:memo_store",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:normalize_find_neighbors",
+        "method:transform_data",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:normalize_find_neighbors",
+        "method:confidence_from_distance",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:normalize_find_neighbors",
+        "method:safe_mean",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:normalize_http_error",
+        "method:error_hint",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:normalize_http_error",
+        "method:retryable_http_code",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:normalize_http_error",
+        "method:parse_retry_after",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:resolve_model_version",
+        "method:memo_get",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:resolve_model_version",
+        "method:list_publisher_models",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:resolve_model_version",
+        "method:memo_put",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:telemetry_envelope_fields",
+        "method:trace_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "method:wrap_embeddings_vectors",
+        "method:safe_mean",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:batch_operation#execute",
+        "method:execute_batch_behavior",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:batch_operation#execute",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:batch_operation#execute",
+        "method:enrich_response",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:batch_operation#output_fields",
+        "method:telemetry_envelope_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:vertex_operation#input_fields",
+        "method:get_behavior_input_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:vertex_operation#execute",
+        "method:extract_user_config",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:vertex_operation#execute",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:vertex_operation#execute",
+        "method:execute_behavior",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:vertex_operation#output_fields",
+        "method:telemetry_envelope_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:vertex_operation#output_fields",
+        "method:get_behavior_output_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:discover_index_config#execute",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:discover_index_config#execute",
+        "method:discover_index_config",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:discover_index_config#execute",
+        "method:enrich_response",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:discover_index_config#output_fields",
+        "method:telemetry_envelope_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:classify_text#input_fields",
+        "method:get_behavior_input_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:classify_text#execute",
+        "method:extract_user_config",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:classify_text#execute",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:classify_text#execute",
+        "method:execute_behavior",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:classify_text#output_fields",
+        "method:telemetry_envelope_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:classify_text#output_fields",
+        "method:get_behavior_output_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:generate_text#input_fields",
+        "method:get_behavior_input_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:generate_text#execute",
+        "method:extract_user_config",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:generate_text#execute",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:generate_text#execute",
+        "method:execute_behavior",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:generate_text#output_fields",
+        "method:telemetry_envelope_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:generate_text#output_fields",
+        "method:get_behavior_output_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:find_neighbors#input_fields",
+        "method:get_behavior_input_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:find_neighbors#execute",
+        "method:execute_behavior",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:find_neighbors#execute",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:find_neighbors#output_fields",
+        "method:telemetry_envelope_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:find_neighbors#output_fields",
+        "method:get_behavior_output_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:read_index_datapoints#input_fields",
+        "method:get_behavior_input_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:read_index_datapoints#execute",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:read_index_datapoints#execute",
+        "method:execute_behavior",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:read_index_datapoints#output_fields",
+        "method:telemetry_envelope_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:read_index_datapoints#output_fields",
+        "method:get_behavior_output_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:upsert_index_datapoints#input_fields",
+        "method:get_behavior_input_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:upsert_index_datapoints#execute",
+        "method:execute_behavior",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:upsert_index_datapoints#execute",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:upsert_index_datapoints#output_fields",
+        "method:telemetry_envelope_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:upsert_index_datapoints#output_fields",
+        "method:get_behavior_output_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:generate_embeddings#input_fields",
+        "method:get_behavior_input_fields",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:generate_embeddings#execute",
+        "method:extract_user_config",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:generate_embeddings#execute",
+        "method:deep_copy",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:generate_embeddings#execute",
+        "method:execute_behavior",
+        {
+          "label": "calls"
+        }
+      ],
+      [
+        "action:generate_embeddings#output_fields",
+        "method:telemetry_envelope_fields",
+        {
+          "label": "calls"
+        }
+      ]
+    ]
+  },
+  "stats": {
+    "method_calls": 142,
+    "http_delete": 3,
+    "http_get": 1,
+    "http_post": 1,
+    "http_put": 1,
+    "error_handlers": 1,
+    "actions": 9,
+    "triggers": 0,
+    "methods": 54
+  },
+  "salvaged": false,
+  "lambdas": [
+    {
+      "owner": "connector#test",
+      "role": "test",
+      "loc": {
+        "line": 224,
+        "column": 8,
+        "length": 678,
+        "begin": 9637,
+        "end": 10315
+      }
+    },
+    {
+      "owner": "method:build_payload",
+      "role": "method",
+      "loc": {
+        "line": 817,
+        "column": 19,
+        "length": 7330,
+        "begin": 37600,
+        "end": 44930
+      }
+    },
+    {
+      "owner": "method:enrich_response",
+      "role": "method",
+      "loc": {
+        "line": 1014,
+        "column": 21,
+        "length": 1076,
+        "begin": 44984,
+        "end": 46060
+      }
+    },
+    {
+      "owner": "method:extract_response",
+      "role": "method",
+      "loc": {
+        "line": 1040,
+        "column": 22,
+        "length": 1179,
+        "begin": 46111,
+        "end": 47290
+      }
+    },
+    {
+      "owner": "method:http_request",
+      "role": "method",
+      "loc": {
+        "line": 1069,
+        "column": 18,
+        "length": 3959,
+        "begin": 47340,
+        "end": 51299
+      }
+    },
+    {
+      "owner": "method:transform_data",
+      "role": "method",
+      "loc": {
+        "line": 1162,
+        "column": 20,
+        "length": 778,
+        "begin": 51348,
+        "end": 52126
+      }
+    },
+    {
+      "owner": "method:validate_input",
+      "role": "method",
+      "loc": {
+        "line": 1184,
+        "column": 20,
+        "length": 4248,
+        "begin": 52176,
+        "end": 56424
+      }
+    },
+    {
+      "owner": "method:with_resilience",
+      "role": "method",
+      "loc": {
+        "line": 1288,
+        "column": 21,
+        "length": 2187,
+        "begin": 56473,
+        "end": 58660
+      }
+    },
+    {
+      "owner": "method:execute_pipeline",
+      "role": "method",
+      "loc": {
+        "line": 1346,
+        "column": 22,
+        "length": 2915,
+        "begin": 58826,
+        "end": 61741
+      }
+    },
+    {
+      "owner": "method:behavior_registry",
+      "role": "method",
+      "loc": {
+        "line": 1445,
+        "column": 23,
+        "length": 9985,
+        "begin": 61968,
+        "end": 71953
+      }
+    },
+    {
+      "owner": "method:configuration_registry",
+      "role": "method",
+      "loc": {
+        "line": 1702,
+        "column": 28,
+        "length": 1079,
+        "begin": 72036,
+        "end": 73115
+      }
+    },
+    {
+      "owner": "method:execute_behavior",
+      "role": "method",
+      "loc": {
+        "line": 1744,
+        "column": 22,
+        "length": 2835,
+        "begin": 73193,
+        "end": 76028
+      }
+    },
+    {
+      "owner": "method:add_upsert_ack",
+      "role": "method",
+      "loc": {
+        "line": 1815,
+        "column": 20,
+        "length": 304,
+        "begin": 76213,
+        "end": 76517
+      }
+    },
+    {
+      "owner": "method:add_word_count",
+      "role": "method",
+      "loc": {
+        "line": 1825,
+        "column": 20,
+        "length": 290,
+        "begin": 76540,
+        "end": 76830
+      }
+    },
+    {
+      "owner": "method:apply_template",
+      "role": "method",
+      "loc": {
+        "line": 1840,
+        "column": 20,
+        "length": 238,
+        "begin": 76884,
+        "end": 77122
+      }
+    },
+    {
+      "owner": "method:approx_token_count",
+      "role": "method",
+      "loc": {
+        "line": 1851,
+        "column": 24,
+        "length": 107,
+        "begin": 77184,
+        "end": 77291
+      }
+    },
+    {
+      "owner": "method:augment_vector_context",
+      "role": "method",
+      "loc": {
+        "line": 1856,
+        "column": 28,
+        "length": 711,
+        "begin": 77322,
+        "end": 78033
+      }
+    },
+    {
+      "owner": "method:build_endpoint_url",
+      "role": "method",
+      "loc": {
+        "line": 1876,
+        "column": 24,
+        "length": 3050,
+        "begin": 78085,
+        "end": 81135
+      }
+    },
+    {
+      "owner": "method:build_generation_config",
+      "role": "method",
+      "loc": {
+        "line": 1939,
+        "column": 29,
+        "length": 329,
+        "begin": 81171,
+        "end": 81500
+      }
+    },
+    {
+      "owner": "method:build_headers",
+      "role": "method",
+      "loc": {
+        "line": 1950,
+        "column": 19,
+        "length": 147,
+        "begin": 81550,
+        "end": 81697
+      }
+    },
+    {
+      "owner": "method:check_rate_limit",
+      "role": "method",
+      "loc": {
+        "line": 1958,
+        "column": 22,
+        "length": 661,
+        "begin": 81742,
+        "end": 82403
+      }
+    },
+    {
+      "owner": "method:chunk_by_tokens",
+      "role": "method",
+      "loc": {
+        "line": 1976,
+        "column": 21,
+        "length": 1696,
+        "begin": 82427,
+        "end": 84123
+      }
+    },
+    {
+      "owner": "method:coerce_embeddings_to_datapoints",
+      "role": "method",
+      "loc": {
+        "line": 2031,
+        "column": 37,
+        "length": 1241,
+        "begin": 84227,
+        "end": 85468
+      }
+    },
+    {
+      "owner": "method:coerce_kwargs",
+      "role": "method",
+      "loc": {
+        "line": 2063,
+        "column": 19,
+        "length": 886,
+        "begin": 85490,
+        "end": 86376
+      }
+    },
+    {
+      "owner": "method:confidence_from_distance",
+      "role": "method",
+      "loc": {
+        "line": 2090,
+        "column": 30,
+        "length": 615,
+        "begin": 86413,
+        "end": 87028
+      }
+    },
+    {
+      "owner": "method:deep_copy",
+      "role": "method",
+      "loc": {
+        "line": 2111,
+        "column": 15,
+        "length": 43,
+        "begin": 87076,
+        "end": 87119
+      }
+    },
+    {
+      "owner": "method:discover_index_config",
+      "role": "method",
+      "loc": {
+        "line": 2113,
+        "column": 27,
+        "length": 1500,
+        "begin": 87149,
+        "end": 88649
+      }
+    },
+    {
+      "owner": "method:each_in_scope",
+      "role": "method",
+      "loc": {
+        "line": 2147,
+        "column": 19,
+        "length": 273,
+        "begin": 88743,
+        "end": 89016
+      }
+    },
+    {
+      "owner": "method:error_hint",
+      "role": "method",
+      "loc": {
+        "line": 2159,
+        "column": 16,
+        "length": 565,
+        "begin": 89054,
+        "end": 89619
+      }
+    },
+    {
+      "owner": "method:extract_ids_for_read",
+      "role": "method",
+      "loc": {
+        "line": 2177,
+        "column": 26,
+        "length": 984,
+        "begin": 89717,
+        "end": 90701
+      }
+    },
+    {
+      "owner": "method:extract_user_config",
+      "role": "method",
+      "loc": {
+        "line": 2204,
+        "column": 25,
+        "length": 1397,
+        "begin": 90769,
+        "end": 92166
+      }
+    },
+    {
+      "owner": "method:execute_batch_behavior",
+      "role": "method",
+      "loc": {
+        "line": 2241,
+        "column": 28,
+        "length": 2671,
+        "begin": 92221,
+        "end": 94892
+      }
+    },
+    {
+      "owner": "method:format_user_error",
+      "role": "method",
+      "loc": {
+        "line": 2314,
+        "column": 23,
+        "length": 400,
+        "begin": 94939,
+        "end": 95339
+      }
+    },
+    {
+      "owner": "method:get_behavior_input_fields",
+      "role": "method",
+      "loc": {
+        "line": 2326,
+        "column": 31,
+        "length": 19673,
+        "begin": 95417,
+        "end": 115090
+      }
+    },
+    {
+      "owner": "method:get_behavior_output_fields",
+      "role": "method",
+      "loc": {
+        "line": 2646,
+        "column": 32,
+        "length": 3245,
+        "begin": 115162,
+        "end": 118407
+      }
+    },
+    {
+      "owner": "method:list_publisher_models",
+      "role": "method",
+      "loc": {
+        "line": 2727,
+        "column": 27,
+        "length": 758,
+        "begin": 118482,
+        "end": 119240
+      }
+    },
+    {
+      "owner": "method:memo_store",
+      "role": "method",
+      "loc": {
+        "line": 2746,
+        "column": 16,
+        "length": 25,
+        "begin": 119259,
+        "end": 119284
+      }
+    },
+    {
+      "owner": "method:memo_get",
+      "role": "method",
+      "loc": {
+        "line": 2748,
+        "column": 14,
+        "length": 178,
+        "begin": 119301,
+        "end": 119479
+      }
+    },
+    {
+      "owner": "method:memo_put",
+      "role": "method",
+      "loc": {
+        "line": 2756,
+        "column": 14,
+        "length": 145,
+        "begin": 119496,
+        "end": 119641
+      }
+    },
+    {
+      "owner": "method:normalize_find_neighbors",
+      "role": "method",
+      "loc": {
+        "line": 2762,
+        "column": 30,
+        "length": 2416,
+        "begin": 119750,
+        "end": 122166
+      }
+    },
+    {
+      "owner": "method:normalize_http_error",
+      "role": "method",
+      "loc": {
+        "line": 2820,
+        "column": 26,
+        "length": 1256,
+        "begin": 122195,
+        "end": 123451
+      }
+    },
+    {
+      "owner": "method:normalize_read_index_datapoints",
+      "role": "method",
+      "loc": {
+        "line": 2859,
+        "column": 37,
+        "length": 704,
+        "begin": 123491,
+        "end": 124195
+      }
+    },
+    {
+      "owner": "method:normalize_safety_settings",
+      "role": "method",
+      "loc": {
+        "line": 2876,
+        "column": 31,
+        "length": 1080,
+        "begin": 124261,
+        "end": 125341
+      }
+    },
+    {
+      "owner": "method:parse_retry_after",
+      "role": "method",
+      "loc": {
+        "line": 2908,
+        "column": 23,
+        "length": 257,
+        "begin": 125386,
+        "end": 125643
+      }
+    },
+    {
+      "owner": "method:qualify_resource",
+      "role": "method",
+      "loc": {
+        "line": 2917,
+        "column": 22,
+        "length": 415,
+        "begin": 125748,
+        "end": 126163
+      }
+    },
+    {
+      "owner": "method:resolve_model_version",
+      "role": "method",
+      "loc": {
+        "line": 2929,
+        "column": 27,
+        "length": 680,
+        "begin": 126248,
+        "end": 126928
+      }
+    },
+    {
+      "owner": "method:retryable_http_code",
+      "role": "method",
+      "loc": {
+        "line": 2951,
+        "column": 25,
+        "length": 78,
+        "begin": 126975,
+        "end": 127053
+      }
+    },
+    {
+      "owner": "method:safe_mean",
+      "role": "method",
+      "loc": {
+        "line": 2955,
+        "column": 15,
+        "length": 120,
+        "begin": 127071,
+        "end": 127191
+      }
+    },
+    {
+      "owner": "method:select_model",
+      "role": "method",
+      "loc": {
+        "line": 2962,
+        "column": 18,
+        "length": 2087,
+        "begin": 127240,
+        "end": 129327
+      }
+    },
+    {
+      "owner": "method:telemetry_envelope_fields",
+      "role": "method",
+      "loc": {
+        "line": 3007,
+        "column": 31,
+        "length": 325,
+        "begin": 129409,
+        "end": 129734
+      }
+    },
+    {
+      "owner": "method:trace_fields",
+      "role": "method",
+      "loc": {
+        "line": 3017,
+        "column": 18,
+        "length": 525,
+        "begin": 129754,
+        "end": 130279
+      }
+    },
+    {
+      "owner": "method:to_query",
+      "role": "method",
+      "loc": {
+        "line": 3034,
+        "column": 14,
+        "length": 579,
+        "begin": 130338,
+        "end": 130917
+      }
+    },
+    {
+      "owner": "method:value_present",
+      "role": "method",
+      "loc": {
+        "line": 3057,
+        "column": 19,
+        "length": 174,
+        "begin": 131003,
+        "end": 131177
+      }
+    },
+    {
+      "owner": "method:vector_search_base",
+      "role": "method",
+      "loc": {
+        "line": 3065,
+        "column": 24,
+        "length": 653,
+        "begin": 131289,
+        "end": 131942
+      }
+    },
+    {
+      "owner": "method:wrap_embeddings_vectors",
+      "role": "method",
+      "loc": {
+        "line": 3083,
+        "column": 29,
+        "length": 745,
+        "begin": 132052,
+        "end": 132797
+      }
+    },
+    {
+      "owner": "action:batch_operation#input_fields",
+      "role": "input_fields",
+      "loc": {
+        "line": 263,
+        "column": 20,
+        "length": 1266,
+        "begin": 11232,
+        "end": 12498
+      }
+    },
+    {
+      "owner": "action:batch_operation#execute",
+      "role": "execute",
+      "loc": {
+        "line": 292,
+        "column": 15,
+        "length": 1098,
+        "begin": 12531,
+        "end": 13629
+      }
+    },
+    {
+      "owner": "action:batch_operation#output_fields",
+      "role": "output_fields",
+      "loc": {
+        "line": 319,
+        "column": 21,
+        "length": 439,
+        "begin": 13667,
+        "end": 14106
+      }
+    },
+    {
+      "owner": "action:batch_operation#sample_output",
+      "role": "sample_output",
+      "loc": {
+        "line": 331,
+        "column": 21,
+        "length": 711,
+        "begin": 14144,
+        "end": 14855
+      }
+    },
+    {
+      "owner": "action:vertex_operation#input_fields",
+      "role": "input_fields",
+      "loc": {
+        "line": 398,
+        "column": 20,
+        "length": 252,
+        "begin": 16904,
+        "end": 17156
+      }
+    },
+    {
+      "owner": "action:vertex_operation#execute",
+      "role": "execute",
+      "loc": {
+        "line": 409,
+        "column": 15,
+        "length": 477,
+        "begin": 17461,
+        "end": 17938
+      }
+    },
+    {
+      "owner": "action:vertex_operation#output_fields",
+      "role": "output_fields",
+      "loc": {
+        "line": 404,
+        "column": 21,
+        "length": 234,
+        "begin": 17194,
+        "end": 17428
+      }
+    },
+    {
+      "owner": "action:vertex_operation#sample_output",
+      "role": "sample_output",
+      "loc": {
+        "line": 418,
+        "column": 21,
+        "length": 2253,
+        "begin": 17976,
+        "end": 20229
+      }
+    },
+    {
+      "owner": "action:discover_index_config#input_fields",
+      "role": "input_fields",
+      "loc": {
+        "line": 466,
+        "column": 20,
+        "length": 311,
+        "begin": 20609,
+        "end": 20920
+      }
+    },
+    {
+      "owner": "action:discover_index_config#execute",
+      "role": "execute",
+      "loc": {
+        "line": 481,
+        "column": 15,
+        "length": 292,
+        "begin": 21230,
+        "end": 21522
+      }
+    },
+    {
+      "owner": "action:discover_index_config#output_fields",
+      "role": "output_fields",
+      "loc": {
+        "line": 473,
+        "column": 21,
+        "length": 239,
+        "begin": 20958,
+        "end": 21197
+      }
+    },
+    {
+      "owner": "action:discover_index_config#sample_output",
+      "role": "sample_output",
+      "loc": {
+        "line": 490,
+        "column": 21,
+        "length": 448,
+        "begin": 21560,
+        "end": 22008
+      }
+    },
+    {
+      "owner": "action:classify_text#input_fields",
+      "role": "input_fields",
+      "loc": {
+        "line": 531,
+        "column": 20,
+        "length": 208,
+        "begin": 23594,
+        "end": 23802
+      }
+    },
+    {
+      "owner": "action:classify_text#execute",
+      "role": "execute",
+      "loc": {
+        "line": 542,
+        "column": 15,
+        "length": 335,
+        "begin": 24021,
+        "end": 24356
+      }
+    },
+    {
+      "owner": "action:classify_text#output_fields",
+      "role": "output_fields",
+      "loc": {
+        "line": 537,
+        "column": 21,
+        "length": 146,
+        "begin": 23841,
+        "end": 23987
+      }
+    },
+    {
+      "owner": "action:classify_text#sample_output",
+      "role": "sample_output",
+      "loc": {
+        "line": 549,
+        "column": 21,
+        "length": 392,
+        "begin": 24396,
+        "end": 24788
+      }
+    },
+    {
+      "owner": "action:generate_text#input_fields",
+      "role": "input_fields",
+      "loc": {
+        "line": 592,
+        "column": 20,
+        "length": 3383,
+        "begin": 26885,
+        "end": 30268
+      }
+    },
+    {
+      "owner": "action:generate_text#execute",
+      "role": "execute",
+      "loc": {
+        "line": 662,
+        "column": 15,
+        "length": 481,
+        "begin": 30485,
+        "end": 30966
+      }
+    },
+    {
+      "owner": "action:generate_text#output_fields",
+      "role": "output_fields",
+      "loc": {
+        "line": 658,
+        "column": 21,
+        "length": 146,
+        "begin": 30306,
+        "end": 30452
+      }
+    },
+    {
+      "owner": "action:generate_text#sample_output",
+      "role": "sample_output",
+      "loc": {
+        "line": 670,
+        "column": 21,
+        "length": 346,
+        "begin": 31008,
+        "end": 31354
+      }
+    },
+    {
+      "owner": "action:find_neighbors#input_fields",
+      "role": "input_fields",
+      "loc": {
+        "line": 684,
+        "column": 20,
+        "length": 123,
+        "begin": 31552,
+        "end": 31675
+      }
+    },
+    {
+      "owner": "action:find_neighbors#execute",
+      "role": "execute",
+      "loc": {
+        "line": 692,
+        "column": 15,
+        "length": 166,
+        "begin": 31900,
+        "end": 32066
+      }
+    },
+    {
+      "owner": "action:find_neighbors#output_fields",
+      "role": "output_fields",
+      "loc": {
+        "line": 688,
+        "column": 21,
+        "length": 154,
+        "begin": 31713,
+        "end": 31867
+      }
+    },
+    {
+      "owner": "action:read_index_datapoints#input_fields",
+      "role": "input_fields",
+      "loc": {
+        "line": 713,
+        "column": 20,
+        "length": 128,
+        "begin": 32805,
+        "end": 32933
+      }
+    },
+    {
+      "owner": "action:read_index_datapoints#execute",
+      "role": "execute",
+      "loc": {
+        "line": 721,
+        "column": 15,
+        "length": 334,
+        "begin": 33159,
+        "end": 33493
+      }
+    },
+    {
+      "owner": "action:read_index_datapoints#output_fields",
+      "role": "output_fields",
+      "loc": {
+        "line": 717,
+        "column": 21,
+        "length": 155,
+        "begin": 32971,
+        "end": 33126
+      }
+    },
+    {
+      "owner": "action:read_index_datapoints#sample_output",
+      "role": "sample_output",
+      "loc": {
+        "line": 728,
+        "column": 21,
+        "length": 443,
+        "begin": 33535,
+        "end": 33978
+      }
+    },
+    {
+      "owner": "action:upsert_index_datapoints#input_fields",
+      "role": "input_fields",
+      "loc": {
+        "line": 744,
+        "column": 20,
+        "length": 126,
+        "begin": 34179,
+        "end": 34305
+      }
+    },
+    {
+      "owner": "action:upsert_index_datapoints#execute",
+      "role": "execute",
+      "loc": {
+        "line": 752,
+        "column": 15,
+        "length": 169,
+        "begin": 34533,
+        "end": 34702
+      }
+    },
+    {
+      "owner": "action:upsert_index_datapoints#output_fields",
+      "role": "output_fields",
+      "loc": {
+        "line": 748,
+        "column": 21,
+        "length": 157,
+        "begin": 34343,
+        "end": 34500
+      }
+    },
+    {
+      "owner": "action:generate_embeddings#input_fields",
+      "role": "input_fields",
+      "loc": {
+        "line": 785,
+        "column": 20,
+        "length": 205,
+        "begin": 36307,
+        "end": 36512
+      }
+    },
+    {
+      "owner": "action:generate_embeddings#execute",
+      "role": "execute",
+      "loc": {
+        "line": 800,
+        "column": 15,
+        "length": 301,
+        "begin": 36950,
+        "end": 37251
+      }
+    },
+    {
+      "owner": "action:generate_embeddings#output_fields",
+      "role": "output_fields",
+      "loc": {
+        "line": 790,
+        "column": 21,
+        "length": 367,
+        "begin": 36550,
+        "end": 36917
+      }
+    }
+  ]
+}

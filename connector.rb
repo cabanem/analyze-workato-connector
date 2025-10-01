@@ -24,37 +24,30 @@
           ['US west 4', 'us-west4'],
           ['US south 1', 'us-south1'],
         ],
-        hint: 'Vertex AI region for model execution.',
-        toggle_hint: 'Select from list',
+        hint: 'Vertex AI region for model execution.', toggle_hint: 'Select from list',
         toggle_field: {
-          name: 'region',
-          label: 'Region',
-          type: 'string',
-          control_type: 'text',
-          optional: false,
-          toggle_hint: 'Use custom value',
-          hint: "See Vertex AI locations docs for allowed regions."
-        }
-      },
+          name: 'region', label: 'Region', type: 'string', control_type: 'text', optional: false,
+          toggle_hint: 'Use custom value', hint: "See Vertex AI locations docs for allowed regions." } },
       { name: 'version', label: 'API version', group: 'Google Cloud Platform', optional: false, default: 'v1', hint: 'e.g. v1beta1' },
       
       # Optional Configurations
       { name: 'vector_search_endpoint', label: 'Vector Search Endpoint', optional: true, hint: 'Public Vector Search domain host for queries' },
       
       # Default Behaviors
-      { name: 'default_model', label: 'Default Model', control_type: 'select',
+      { name: 'default_model', label: 'Default Model', control_type: 'select', optional: true,
         options: [
           ['Gemini 1.5 Flash', 'gemini-1.5-flash'],
           ['Gemini 1.5 Pro',   'gemini-1.5-pro'],
           ['Text Embedding 004', 'text-embedding-004'],
           ['Text Embedding Gecko', 'textembedding-gecko']
-        ],
-        optional: true },
-      { name: 'optimization_mode', label: 'Optimization Mode', control_type: 'select',
-        options: [['Balanced', 'balanced'], ['Cost', 'cost'], ['Performance', 'performance']],
-        default: 'balanced' },
+        ] },
+      { name: 'optimization_mode', label: 'Optimization Mode', control_type: 'select', default: 'balanced',
+        options: [['Balanced', 'balanced'], ['Cost', 'cost'], ['Performance', 'performance']] },
       { name: 'enable_caching', label: 'Enable Response Caching', control_type: 'checkbox', default: true },
-      { name: 'enable_logging', label: 'Enable Debug Logging', control_type: 'checkbox', default: false }
+      { name: 'enable_logging', label: 'Enable Debug Logging', control_type: 'checkbox', default: false },
+      # Allow admin discovery
+      { name: 'allow_admin_discovery', label: 'Allow admin discovery of index config', group: 'Advanced', control_type: 'checkbox', default: false,
+        hint: 'When enabled, the connector may read Index/IndexEndpoint metadata to compute confidence.' }
     ],
     
     authorization: {
@@ -236,13 +229,11 @@
     call('list_publisher_models', connection) # raises normalized errors
 
     # 2) Regional reachability / permissions
-    parent = "projects/#{project}/locations/#{region}"
-    call('http_request',
-      connection,
-      method:  'GET',
-      url:     "#{parent}/endpoints",
-      headers: call('build_headers', connection)
+    url = call('build_endpoint_url', connection,
+      { 'custom_path' => "https://{region}-aiplatform.googleapis.com/#{connection['version']}/projects/{project}/locations/{region}/endpoints" },
+      {}
     )
+    call('http_request', connection, method: 'GET', url: url, headers: call('build_headers', connection))
 
     true
   rescue => e
@@ -361,7 +352,6 @@
         end
       end
     },
-
     # Universal Action
     vertex_operation: {
       title: 'UNIVERSAL - Vertex AI Operation',
@@ -468,7 +458,47 @@
     # ------------------------------------------
     # THIN WRAPPERS
     # ------------------------------------------
-    
+    # Index disovery
+    discover_index_config: {
+      title: 'VECTOR SEARCH - Discover index configuration',
+      description: 'Reads IndexEndpoint and Index to determine distance metrics and feature normalization',
+      # INPUT
+      input_fields: lambda do |_obj_defs, _connection, _cfg|
+        [
+          { name: 'index_endpoint', label: 'Index Endpoint', optional: false, hint: 'Resource or ID (e.g., projects/.../indexEndpoints/IEP or just IEP)' },
+          { name: 'deployed_index_id', label: 'Deployed Index ID', optional: false }
+        ]
+      end,
+      # OUTPUT
+      output_fields: lambda do |_obj_defs, _connection, _cfg|
+        call('telemetry_envelope_fields') + [
+          { name: 'index', label: 'Index resource' },
+          { name: 'distance_metric' },
+          { name: 'feature_norm_type' }
+        ]
+      end,
+      # EXECUTE
+      execute: lambda do |connection, input|
+        safe = call('deep_copy', input)
+        disc = call('discover_index_config', connection, safe)
+        call('enrich_response',
+          response: disc,
+          metadata: { 'operation' => 'vector.discover_config', 'model' => 'n/a' }
+        )
+      end,
+      # SAMPLE
+      sample_output: lambda do |_connection, _cfg|
+        {
+          "success"=>true, "timestamp"=>"2025-01-01T00:00:00Z",
+          "metadata"=>{ "operation"=>"vector.discover_config", "model"=>"n/a" },
+          "trace"=>{ "correlation_id"=>"abc", "duration_ms"=>12, "attempt"=>1 },
+          "index"=>"projects/.../locations/us-central1/indexes/123",
+          "distance_metric"=>"COSINE_DISTANCE",
+          "feature_norm_type"=>"UNIT_L2_NORM"
+        }
+      end
+    },
+    # Text
     classify_text: {
       title: 'AI - Classify Text',
       description: 'Classify text into one of the provided categories',
@@ -481,8 +511,7 @@
             ['Explicit (choose model below)', 'explicit'],
             ['Use connection default',        'connection'] ],
           sticky: true, extends_schema: true, # forces input_fields to re-render when changed
-          hint: 'Switch to Explicit to pick an exact Vertex model for this step.'
-        },
+          hint: 'Switch to Explicit to pick an exact Vertex model for this step.' },
         { name: 'model',
           label: 'Model',
           group: 'Model & tuning',
@@ -491,7 +520,7 @@
           optional: true,
           extends_schema: true,
           ngIf: 'input.model_mode == "explicit"',
-          pick_list: 'models_generation_dynamic',
+          pick_list: 'models_dynamic_for_behavior',
           toggle_hint: 'Select from list',
           toggle_field: { name: 'model', label: 'Model (custom id)', type: 'string', control_type: 'text', optional: true, toggle_hint: 'Provide custom value' }},
         { name: 'lock_model_revision', label: 'Lock to latest numbered revision', control_type: 'checkbox', group: 'Model & tuning', ngIf: 'input.model_mode == "explicit"' },
@@ -528,7 +557,126 @@
         }
       end
     },
+    generate_text: {
+      title: 'AI - Generate Text',
+      description: 'Gemini text generation',
 
+      # CONFIG
+      config_fields: [
+        { name: 'prompt_mode', label: 'Prompt mode', control_type: 'select', default: 'simple', optional: false, sticky: true, extends_schema: true,
+          options: [
+            ['Simple (text prompt)',       'simple'],
+            ['Structured (contents array)', 'contents'],
+            ['Raw JSON payload',           'raw_json']
+          ],
+          hint: 'Structured modes let you pass a pre-built Vertex request (useful with RAG).' },
+
+        # --- Standardized model selector (unified with universal op) ---
+        { name: 'model_mode', label: 'Model selection', group: 'Model & tuning', control_type: 'select', default: 'auto', optional: false, sticky: true, extends_schema: true,
+          options: [
+            ['Auto (use connection strategy)', 'auto'],
+            ['Explicit (choose model below)',  'explicit'],
+            ['Use connection default',         'connection']
+          ],
+          hint: 'Switch to Explicit to pick an exact Vertex model for this step.' },
+        { name: 'model', label: 'Model', group: 'Model & tuning', control_type: 'select', sticky: true, optional: true, extends_schema: true,
+          ngIf: 'input.model_mode == "explicit"', pick_list: 'models_dynamic_for_behavior', pick_list_params: { behavior: 'text.generate' },
+          toggle_hint: 'Select from list', toggle_field: { name: 'model', label: 'Model (custom id)', type: 'string',
+            control_type: 'text', optional: true, toggle_hint: 'Provide custom value' } },
+        { name: 'lock_model_revision', label: 'Lock to latest numbered revision', control_type: 'checkbox', group: 'Model & tuning',
+          ngIf: 'input.model_mode == "explicit"', hint: 'Resolves alias (e.g., gemini-1.5-pro) to highest numeric rev at runtime.' },
+        { name: 'advanced_config', label: 'Show Advanced Configuration', control_type: 'checkbox', extends_schema: true, optional: true, default: false }
+      ],
+
+      # INPUT
+      input_fields: lambda do |_obj_defs, _connection, config_fields|
+        cfg       = config_fields.is_a?(Hash) ? config_fields : {}
+        mode      = (cfg['prompt_mode'] || 'simple').to_s
+        show_adv  = !!cfg['advanced_config']
+
+        case mode
+        when 'contents'
+          fields = [
+            # Prompt structure
+            { name: 'contents', label: 'Contents', type: 'array', of: 'object', group: 'Prompt structure', optional: false,
+              properties: [
+                { name: 'role', label: 'Role', control_type: 'select',
+                  options: [['User','user'], ['Model','model']], optional: true },
+                { name: 'parts', label: 'Parts', type: 'array', of: 'object', properties: [
+                  { name: 'text',        label: 'Text' },
+                  { name: 'inline_data', label: 'Inline data', type: 'object', properties: [
+                    { name: 'mime_type', label: 'MIME type' },
+                    { name: 'data',      label: 'Base64 data', control_type: 'text-area' }
+                  ]},
+                  { name: 'file_data',   label: 'File data (URI)', type: 'object', properties: [
+                    { name: 'mime_type', label: 'MIME type' },
+                    { name: 'file_uri',  label: 'File URI' }
+                  ]}
+                ]}
+              ]
+            }
+          ]
+          if show_adv
+            fields += [
+              { name: 'system', label: 'System instruction', control_type: 'text-area', group: 'Advanced' },
+              { name: 'safety_settings', label: 'Safety settings', type: 'array', of: 'object', group: 'Advanced',
+                properties: [
+                  { name: 'category',  control_type: 'select', pick_list: 'safety_categories',  optional: false },
+                  { name: 'threshold', control_type: 'select', pick_list: 'safety_thresholds',  optional: false },
+                  { name: 'method',    control_type: 'select', pick_list: 'safety_methods',     optional: true }
+                ]
+              },
+              { name: 'response_mime_type', label: 'Response MIME type', group: 'Advanced',
+                hint: 'e.g., application/json for JSON mode' },
+              { name: 'response_schema', label: 'Response schema (object)', type: 'object', group: 'Advanced',
+                hint: 'When set, a compatible response_mime_type is required' },
+              { name: 'temperature', label: 'Temperature', type: 'number', group: 'Advanced', hint: '0.0 to 1.0' },
+              { name: 'max_tokens',  label: 'Max Tokens',  type: 'integer', group: 'Advanced' },
+              { name: 'cache_ttl',   label: 'Cache TTL (seconds)', type: 'integer', group: 'Advanced', default: 300 }
+            ]
+          end
+          fields
+
+        when 'raw_json'
+          fields = [
+            { name: 'payload_json', label: 'Full request JSON', control_type: 'text-area',
+              optional: false, group: 'Prompt (raw JSON)',
+              hint: 'Paste the entire models.generateContent request body including contents[].' }
+          ]
+          if show_adv
+            fields += [
+              { name: 'cache_ttl',   label: 'Cache TTL (seconds)', type: 'integer', group: 'Advanced', default: 300 }
+            ]
+          end
+          fields
+
+        else # 'simple'
+          call('get_behavior_input_fields', 'text.generate', show_adv, cfg)
+        end
+      end,
+      # OUTPUT
+      output_fields: lambda do |_obj_defs, _connection, _cfg|
+        call('telemetry_envelope_fields') + call('get_behavior_output_fields', 'text.generate')
+      end,
+      # EXECUTE
+      execute: lambda do |connection, input, _in_schema, _out_schema, config_fields|
+        user_cfg   = call('extract_user_config', input, config_fields['advanced_config'], config_fields)
+        safe_input = call('deep_copy', input)
+        # Make prompt mode visible to the pipeline selector without mutating recipe input
+        safe_input['prompt_mode'] = config_fields['prompt_mode'] || 'simple'
+        call('execute_behavior', connection, 'text.generate', safe_input, user_cfg)
+      end,
+      # SAMPLE OUT
+      sample_output: lambda do |_connection, _cfg|
+        {
+          "success" => true, "timestamp" => Time.now.utc.iso8601,
+          "metadata" => { "operation" => "text.generate", "model" => "gemini-1.5-flash-002" },
+          "trace" => { "correlation_id" => "abc", "duration_ms" => 42, "attempt" => 1 },
+          "result" => "Hello world."
+        }
+      end
+    },
+    # Vector search
     find_neighbors: {
       title: 'VECTOR SEARCH - Find nearest neighbors',
       description: 'Query a deployed Vector Search index',
@@ -545,7 +693,67 @@
         call('execute_behavior', connection, 'vector.find_neighbors', call('deep_copy', input))
       end
     },
-
+    read_index_datapoints: {
+      title: 'VECTOR SEARCH - Read datapoints (vectors) by ID',
+      description: 'Fetch stored vectors and metadata for specific datapoint IDs from a deployed index',
+      # CONFIG
+      config_fields: [
+        { name: 'id_source', label: 'ID source', control_type: 'select', optional: false,
+          options: [
+            ['Auto (accept any)', 'auto'],
+            ['Manual IDs',        'manual'],
+            ['Neighbors array',   'neighbors'],
+            ['k‑NN groups',       'groups']
+          ],
+          default: 'auto', sticky: true, extends_schema: true,
+          hint: 'Controls which input fields are shown for datapoint IDs.'
+        }
+      ],
+      # INPUT
+      input_fields: lambda do |_obj_defs, _connection, cfg|
+        call('get_behavior_input_fields', 'vector.read_datapoints', true, cfg)
+      end,
+      # OUTPUT
+      output_fields: lambda do |_obj_defs, _connection, _cfg|
+        call('telemetry_envelope_fields') + call('get_behavior_output_fields', 'vector.read_datapoints')
+      end,
+      # EXECUTE
+      execute: lambda do |connection, input, _in_schema, _out_schema, cfg|
+        safe = call('deep_copy', input)
+        # Pass the chosen mode to the behavior without mutating the original input
+        safe['id_source'] = cfg['id_source'] if cfg['id_source']
+        call('execute_behavior', connection, 'vector.read_datapoints', safe)
+      end,
+      # SAMPLE OUT
+      sample_output: lambda do |_connection, _cfg|
+        {
+          "success"   => true,
+          "timestamp" => Time.now.utc.iso8601,
+          "metadata"  => { "operation" => "vector.read_datapoints", "model" => "n/a" },
+          "trace"     => { "correlation_id" => "abc", "duration_ms" => 12, "attempt" => 1 },
+          "datapoints"=> [
+            { "datapoint_id" => "dp_000001", "feature_vector" => [0.01, 0.02, 0.03] }
+          ]
+        }
+      end
+    },
+    upsert_index_datapoints: {
+      title: 'VECTOR SEARCH - Upsert index datapoints',
+      description: 'Add or update datapoints in a Vector Search index',
+      # INPUT
+      input_fields: lambda do |_obj_defs, _connection, _cfg|
+        call('get_behavior_input_fields', 'vector.upsert_datapoints', true)
+      end,
+      # OUTPUT
+      output_fields: lambda do |_obj_defs, _connection, _cfg|
+        call('telemetry_envelope_fields') + call('get_behavior_output_fields', 'vector.upsert_datapoints')
+      end,
+      # EXECUTE
+      execute: lambda do |connection, input, _in_schema, _out_schema, _cfg|
+        call('execute_behavior', connection, 'vector.upsert_datapoints', call('deep_copy', input))
+      end
+    },
+    # Embeddings
     generate_embeddings: {
       title: 'VECTOR SEARCH - Generate embeddings',
       description: 'Create dense embeddings for text',
@@ -567,7 +775,7 @@
           optional: true,
           extends_schema: true,
           ngIf: 'input.model_mode == "explicit"',
-          pick_list: 'models_embedding_dynamic',
+          pick_list: 'models_dynamic_for_behavior',
           toggle_hint: 'Select from list',
           toggle_field: { name: 'model', label: 'Model (custom id)', type: 'string', control_type: 'text', optional: true, toggle_hint: 'Provide custom value' } },
         { name: 'lock_model_revision', label: 'Lock to latest numbered revision', control_type: 'checkbox', group: 'Model & tuning', ngIf: 'input.model_mode == "explicit"' },
@@ -593,76 +801,6 @@
         user_cfg = call('extract_user_config', input, config_fields['advanced_config'], config_fields)
         safe     = call('deep_copy', input)
         call('execute_behavior', connection, 'text.embed', safe, user_cfg)
-      end
-    },
-    
-    generate_text: {
-      title: 'AI - Generate Text',
-      description: 'Gemini text generation',
-
-      # CONFIG
-      config_fields: [
-        { name: 'model_mode', label: 'Model selection', group: 'Model & tuning', control_type: 'select', default: 'auto', optional: false,
-          options: [
-            ['Auto (use connection strategy)', 'auto'],
-            ['Explicit (choose model below)', 'explicit'],
-            ['Use connection default',        'connection'] ],
-          sticky: true, extends_schema: true, hint: 'Switch to Explicit to pick an exact Vertex model for this step.'
-        },
-        { name: 'model',
-          label: 'Model',
-          group: 'Model & tuning',
-          control_type: 'select',
-          sticky: true,
-          optional: true,
-          extends_schema: true,
-          ngIf: 'input.model_mode == "explicit"',
-          pick_list: 'models_generation_dynamic',
-          toggle_hint: 'Select from list',
-          toggle_field: { name: 'model', label: 'Model (custom id)', type: 'string', control_type: 'text', optional: true, toggle_hint: 'Provide custom value' } },
-        { name: 'lock_model_revision', label: 'Lock to latest numbered revision', control_type: 'checkbox', group: 'Model & tuning', ngIf: 'input.model_mode == "explicit"' },
-        { name: 'advanced_config', label: 'Show Advanced Configuration', control_type: 'checkbox', extends_schema: true, optional: true, default: false }
-      ],
-      # INPUT
-      input_fields: lambda do |_obj_defs, _connection, config_fields|
-        cfg = config_fields.is_a?(Hash) ? config_fields : {}
-        call('get_behavior_input_fields', 'text.generate', cfg['advanced_config'], cfg)
-      end,
-      # OUTPUT
-      output_fields: lambda do |_obj_defs, _connection, _cfg|
-        call('telemetry_envelope_fields') + call('get_behavior_output_fields', 'text.generate')
-      end,
-      # EXECUTE
-      execute: lambda do |connection, input, _in_schema, _out_schema, config_fields|
-        user_cfg = call('extract_user_config', input, config_fields['advanced_config'], config_fields)
-        safe_input = call('deep_copy', input)
-        call('execute_behavior', connection, 'text.generate', safe_input, user_cfg)
-      end,
-      # SAMPLE OUT
-      sample_output: lambda do |_connection, _cfg|
-        {
-          "success" => true, "timestamp" => Time.now.utc.iso8601,
-          "metadata" => { "operation" => "text.generate", "model" => "gemini-1.5-flash-002" },
-          "trace" => { "correlation_id" => "abc", "duration_ms" => 42, "attempt" => 1 },
-          "result" => "Hello world."
-        }
-      end
-    },
-
-    upsert_index_datapoints: {
-      title: 'VECTOR SEARCH - Upsert index datapoints',
-      description: 'Add or update datapoints in a Vector Search index',
-      # INPUT
-      input_fields: lambda do |_obj_defs, _connection, _cfg|
-        call('get_behavior_input_fields', 'vector.upsert_datapoints', true)
-      end,
-      # OUTPUT
-      output_fields: lambda do |_obj_defs, _connection, _cfg|
-        call('telemetry_envelope_fields') + call('get_behavior_output_fields', 'vector.upsert_datapoints')
-      end,
-      # EXECUTE
-      execute: lambda do |connection, input, _in_schema, _out_schema, _cfg|
-        call('execute_behavior', connection, 'vector.upsert_datapoints', call('deep_copy', input))
       end
     }
   },
@@ -693,25 +831,91 @@
       when 'vertex_prompt'
         payload = {
           'contents' => [{
-            'role' => 'user',
+            'role'  => 'user',
             'parts' => [{ 'text' => call('apply_template', template, variables) }]
           }],
           'generationConfig' => call('build_generation_config', variables)
         }.compact
 
-        # Always honor system instructions if provided (Vertex v1 supports this)
         sys = variables['system']
-        if sys && !sys.to_s.strip.empty?
-          payload['systemInstruction'] = { 'parts' => [{ 'text' => sys }] }
-        end
+        payload['systemInstruction'] = { 'parts' => [{ 'text' => sys }] } if sys && !sys.to_s.strip.empty?
 
-        # Advanced safety (new) — supports both array and legacy hash
         if variables['safety_settings']
           payload['safetySettings'] = call('normalize_safety_settings', variables['safety_settings'])
         end
 
+        # JSON mode (optional)
+        if variables['response_mime_type'] || variables['response_schema']
+          gc = (payload['generationConfig'] ||= {})
+          gc['responseMimeType'] = variables['response_mime_type'] if variables['response_mime_type']
+          gc['responseSchema']   = variables['response_schema']     if variables['response_schema']
+        end
+
         payload['labels'] = variables['labels'] if variables['labels']
         payload
+
+      when 'vertex_contents'
+        contents = Array(variables['contents']).map do |c|
+          role = c['role'] || c[:role] || 'user'
+          parts = Array(c['parts']).map do |p|
+            if p['text'] || p[:text]
+              { 'text' => p['text'] || p[:text] }
+            elsif p['inline_data'] || p[:inline_data] || p['inlineData']
+              src = p['inline_data'] || p[:inline_data] || p['inlineData']
+              { 'inlineData' => {
+                  'mimeType' => src['mime_type'] || src[:mime_type] || src['mimeType'],
+                  'data'     => src['data'] || src[:data]
+                }.compact
+              }
+            elsif p['file_data'] || p[:file_data] || p['fileData']
+              src = p['file_data'] || p[:file_data] || p['fileData']
+              { 'fileData' => {
+                  'mimeType' => src['mime_type'] || src[:mime_type] || src['mimeType'],
+                  'fileUri'  => src['file_uri']  || src[:file_uri]  || src['fileUri']
+                }.compact
+              }
+            else
+              {} # ignored
+            end
+          end.compact
+
+          { 'role' => role, 'parts' => parts }
+        end
+
+        payload = {
+          'contents'         => contents,
+          'generationConfig' => call('build_generation_config', variables)
+        }
+
+        if variables['system']
+          payload['systemInstruction'] = { 'parts' => [{ 'text' => variables['system'] }] }
+        end
+        if variables['safety_settings']
+          payload['safetySettings'] = call('normalize_safety_settings', variables['safety_settings'])
+        end
+
+        # JSON mode (optional)
+        gc = (payload['generationConfig'] ||= {})
+        gc['responseMimeType'] = variables['response_mime_type'] if variables['response_mime_type']
+        gc['responseSchema']   = variables['response_schema']     if variables['response_schema']
+
+        payload['labels'] = variables['labels'] if variables['labels']
+        payload
+      when 'vertex_passthrough'
+        src = variables['payload'] || variables['payload_json'] || variables['fully_formed'] || variables['request_json']
+        obj =
+          if src.is_a?(String)
+            begin
+              JSON.parse(src)
+            rescue
+              corr = "#{Time.now.utc.to_i}-#{SecureRandom.hex(6)}"
+              error("Invalid payload_json (must be valid JSON object). [corr_id=#{corr}]")
+            end
+          else
+            src
+          end
+        error('payload_json must be a JSON object') unless obj.is_a?(Hash)
+        obj
 
       # Embedding
       when 'embedding'
@@ -729,7 +933,7 @@
         params['outputDimensionality']  = variables['output_dimensionality'] if variables['output_dimensionality']
         body['parameters'] = params unless params.empty? 
         body
-
+      # Vector search
       when 'find_neighbors'
         queries = Array(variables['queries']).map do |q|
           dp =
@@ -777,14 +981,16 @@
           end
 
         { 'datapoints' => datapoints }
-
+      when 'read_index_datapoints'
+        ids = call('extract_ids_for_read', variables)
+        { 'deployed_index_id' => variables['deployed_index_id'], 'ids' => ids }
       # Multimodal
       when 'multimodal'
         parts = []
         parts << { 'text' => variables['text'] } if variables['text']
         if variables['images']
           variables['images'].each do |img|
-            parts << { 'inLineData' => { 'mimeType' => img['mime_type'] || 'image/jpeg', 'data' => img['data'] } }
+            parts << { 'inlineData' => { 'mimeType' => img['mime_type'] || 'image/jpeg', 'data' => img['data'] } }
           end
         end
 
@@ -1259,7 +1465,6 @@
             }
           }
         },
-        
         'text.translate' => {
           description: 'Translate text between languages',
           capability: 'generation',
@@ -1294,7 +1499,6 @@
             'max_tokens' => 2048
           }
         },
-        
         'text.summarize' => {
           description: 'Summarize text content',
           capability: 'generation',
@@ -1325,7 +1529,6 @@
             'max_words' => 200
           }
         },
-        
         'text.classify' => {
           description: 'Classify text into categories',
           capability: 'generation',
@@ -1357,12 +1560,11 @@
             'temperature' => 0.1
           }
         },
-        
         # Embedding Operations
         'text.embed' => {
           description: 'Generate text embeddings',
           capability: 'embedding',
-          supported_models: ['text-embedding-004', 'textembedding-gecko'],
+          supported_models: ['text-embedding-005', 'text-embedding-004', 'textembedding-gecko', 'gemini-embedding-001'],
           features: ['batching', 'caching'],
           config_template: {
             'validate' => {
@@ -1375,7 +1577,6 @@
             'post_process' => 'wrap_embeddings_vectors'
           }
         },
-        
         # Multimodal Operations
         'multimodal.analyze' => {
           description: 'Analyze images with text prompts',
@@ -1400,7 +1601,6 @@
             }
           }
         },
-        
         # Vector Operations
         'vector.upsert_datapoints' => {
           description: 'Upsert datapoints into a Vector Search index',
@@ -1425,7 +1625,6 @@
             'post_process' => 'add_upsert_ack'
           }
         },
-
         'vector.find_neighbors' => {
           description: 'Find nearest neighbors from a deployed index',
           capability: 'vector',
@@ -1435,7 +1634,10 @@
               'schema' => [
                 { 'name' => 'index_endpoint',    'required' => true },
                 { 'name' => 'deployed_index_id', 'required' => true },
-                { 'name' => 'queries',           'required' => true }
+                { 'name' => 'queries',           'required' => true },
+                { 'name' => 'distance_metric' },        # optional
+                { 'name' => 'feature_norm_type' },      # optional
+                { 'name' => 'include_stats' }           # optional
               ],
               'constraints' => [
                 # Exactly one locator per query: vector OR datapoint_id
@@ -1464,7 +1666,35 @@
             'extract'  => { 'format' => 'raw' },
             'post_process' => 'normalize_find_neighbors'
           }
-        }       
+        },
+        'vector.read_datapoints' => {
+          description: 'Read datapoints (vectors) by ID from a deployed index',
+          capability: 'vector',
+          supported_models: [], # not model-driven
+          config_template: {
+            'validate' => {
+              'schema' => [
+                { 'name' => 'index_endpoint',    'required' => true },
+                { 'name' => 'deployed_index_id', 'required' => true },
+                { 'name' => 'ids' },        # manual ids
+                { 'name' => 'groups' },     # from find_neighbors (normalized)
+                { 'name' => 'neighbors' }   # flattened neighbors
+              ],
+              'constraints' => [
+                { 'type' => 'one_of', 'fields' => ['ids', 'groups', 'neighbors'] },
+                { 'type' => 'max_items', 'field' => 'ids', 'value' => 1000 }
+              ]
+            },
+            'payload'  => { 'format' => 'read_index_datapoints' },
+            'endpoint' => {
+              'family' => 'vector_index_endpoints',
+              'path'   => ':readIndexDatapoints',
+              'method' => 'POST'
+            },
+            'extract'  => { 'format' => 'raw' },
+            'post_process' => 'normalize_read_index_datapoints'
+          }
+        }     
       }
     end,
     
@@ -1535,7 +1765,12 @@
         cfg[:generation].each { |k, v| local_input[k] = v unless v.nil? }
       end
 
-      operation_config['model']     = call('select_model', behavior_def, cfg, local_input)
+      operation_config['model'] = call('select_model', behavior_def, cfg, local_input)
+      # methods.execute_behavior (after setting operation_config['model'])
+      if behavior_def[:supported_models].any? && !behavior_def[:supported_models].include?(operation_config['model'])
+        # force a sane fallback rather than issuing a bad :predict call
+        operation_config['model'] = call('select_model', behavior_def, cfg, local_input.merge('model_mode' => 'auto'))
+      end
       operation_config['resilience'] = cfg[:execution]
 
       # Caching key is derived from local_input
@@ -1544,6 +1779,23 @@
         if (hit = call('memo_get', cache_key))
           return hit
         end
+      end
+
+      pmode = (local_input['prompt_mode'] || 'simple').to_s
+      case pmode
+      when 'contents'
+        operation_config['payload']   = { 'format' => 'vertex_contents' }
+        operation_config['validate']  = { 'schema' => [ { 'name' => 'contents', 'required' => true } ] }
+      when 'raw_json'
+        operation_config['payload']   = { 'format' => 'vertex_passthrough' }
+        operation_config['validate']  = { 'schema' => [ { 'name' => 'payload_json', 'required' => true } ] }
+      else
+        # keep the config_template default ('vertex_prompt')
+      end
+
+      # Gate index discovery
+      if behavior == 'vector.find_neighbors'
+        local_input = call('augment_vector_context', connection, local_input)
       end
 
       result = call('execute_pipeline', connection, behavior, local_input, operation_config)
@@ -1601,6 +1853,25 @@
       ((text.to_s.length) / 4.0).ceil
     end,
 
+    augment_vector_context: lambda do |connection, local_input|
+      out = call('deep_copy', local_input)
+      need_metric = !call('value_present', out['distance_metric'])
+      need_norm   = !call('value_present', out['feature_norm_type'])
+      return out unless need_metric || need_norm
+
+      # Only attempt admin discovery if the connection is allowed
+      return out unless connection['allow_admin_discovery'] == true
+
+      begin
+        disc = call('discover_index_config', connection, out)
+        out['distance_metric']   ||= disc['distance_metric']
+        out['feature_norm_type'] ||= disc['feature_norm_type']
+      rescue
+        # Soft‑fail; confidence will be nil but neighbors still returned
+      end
+      out
+    end,
+
     # Build endpoint URL
     build_endpoint_url: lambda do |connection, endpoint_config, input|
       v = connection['version']
@@ -1611,19 +1882,28 @@
       family = endpoint_config['family']
 
       case family
+      # PUBLISHER MODELS
       when 'publisher_models'
         api_version = (connection['version'].to_s.strip.empty? ? 'v1' : connection['version'])
         publisher   = endpoint_config['publisher'] || 'google'
         "https://aiplatform.googleapis.com/#{api_version}/publishers/#{publisher}/models"
+      # VECTOR INDEXES
       when 'vector_indexes' # admin/data-plane ops on Index resources
         index = call('qualify_resource', connection, 'index', input['index'] || endpoint_config['index'])
         "#{base_regional}/#{index}#{endpoint_config['path']}" # e.g., ':upsertDatapoints'
+      # VECTOR INDEX ENDPOINTS
+      when 'vector_index_endpoints' # query via MatchService or admin reads
+        base =
+          if endpoint_config['admin'] == true
+            v = connection['version']; version = (v && !v.to_s.strip.empty?) ? v : 'v1'
+            "https://#{connection['region']}-aiplatform.googleapis.com/#{version}"
+          else
+            call('vector_search_base', connection, input) # uses vdb host when provided
+          end
+        ie = call('qualify_resource', connection, 'index_endpoint',
+                  input['index_endpoint'] || endpoint_config['index_endpoint'])
+        "#{base}/#{ie}#{endpoint_config['path']}" # e.g., ':findNeighbors' or ''
 
-      when 'vector_index_endpoints' # query via MatchService (vbd host)
-        base  = call('vector_search_base', connection, input)
-        ie    = call('qualify_resource', connection, 'index_endpoint',
-                    input['index_endpoint'] || endpoint_config['index_endpoint'])
-        "#{base}/#{ie}#{endpoint_config['path']}" # e.g., ':findNeighbors'
 
       else
         base_host = (region == 'global') ? 'aiplatform.googleapis.com' : "#{region}-aiplatform.googleapis.com"
@@ -1747,6 +2027,39 @@
       { 'batches' => batches, 'oversized' => oversized }
     end,
 
+    # Turn embeddings (+ optional options) into IndexDatapoints
+    coerce_embeddings_to_datapoints: lambda do |vars|
+      embeddings = Array(vars['embeddings'])
+      error('No embeddings provided') if embeddings.empty?
+
+      ids     = Array(vars['datapoint_ids'])
+      prefix  = (vars['datapoint_id_prefix'] || 'dp_').to_s
+      start   = (vars['start_index'] || 1).to_i
+      pad_to  = (vars['pad_to'] || 6).to_i
+
+      if ids.empty?
+        ids = embeddings.each_index.map { |i| "#{prefix}#{(start + i).to_s.rjust(pad_to, '0')}" }
+      elsif ids.length != embeddings.length
+        error("datapoint_ids length (#{ids.length}) must match embeddings length (#{embeddings.length})")
+      end
+
+      common_restricts        = vars['common_restricts']
+      common_numeric          = vars['common_numeric_restricts']
+      common_crowding_tag     = vars['common_crowding_tag']
+      common_embedding_meta   = vars['embedding_metadata']
+
+      embeddings.each_with_index.map do |vec, i|
+        {
+          'datapointId'       => ids[i],
+          'featureVector'     => Array(vec).map(&:to_f),
+          'restricts'         => common_restricts,
+          'numericRestricts'  => common_numeric,
+          'crowdingTag'       => common_crowding_tag,
+          'embeddingMetadata' => common_embedding_meta
+        }.compact
+      end
+    end,
+
     coerce_kwargs: lambda do |*args, **kwargs|
       # Non-destructive copies
       positional = args.dup
@@ -1774,8 +2087,61 @@
       [positional, kw]
     end,
     
+    confidence_from_distance: lambda do |distance, metric, feature_norm_type|
+      return nil unless distance
+      m = metric.to_s
+      case m
+      when 'COSINE_DISTANCE'
+        # distance = 1 - cos_sim  => confidence = (1 + cos_sim)/2 = 1 - distance/2
+        c = 1.0 - (distance.to_f / 2.0)
+        [[c, 0.0].max, 1.0].min
+      when 'DOT_PRODUCT_DISTANCE'
+        # distance = -dot; if vectors were UNIT_L2_NORM, dot ∈ [-1,1] ~ cos_sim
+        if feature_norm_type.to_s == 'UNIT_L2_NORM'
+          dot = -distance.to_f
+          c = 0.5 * (1.0 + dot)
+          [[c, 0.0].max, 1.0].min
+        end
+      else
+        nil
+      end
+    end,
+
     # Safely duplicate object
     deep_copy: lambda { |obj| JSON.parse(JSON.dump(obj)) },
+
+    discover_index_config: lambda do |connection, input|
+      ep = call('qualify_resource', connection, 'index_endpoint', input['index_endpoint'])
+      dep_id = input['deployed_index_id'].to_s
+      return {} if ep.to_s.empty? || dep_id.empty?
+
+      cache_key = "idxcfg:#{ep}:#{dep_id}"
+      if (hit = call('memo_get', cache_key)); return hit; end
+
+      # 1) Read IndexEndpoint (admin host)
+      url_ep = call('build_endpoint_url', connection, {
+        'family' => 'vector_index_endpoints', 'index_endpoint' => ep, 'method' => 'GET', 'admin' => true
+      }, input)
+      ep_body = call('http_request', connection, method: 'GET', url: url_ep, headers: call('build_headers', connection))
+      deployed = Array(ep_body['deployedIndexes']).find { |d| d['id'] == dep_id }
+      return {} unless deployed && deployed['index']
+
+      # 2) Read Index (admin host)
+      url_idx = call('build_endpoint_url', connection, {
+        'family' => 'vector_indexes', 'index' => deployed['index'], 'method' => 'GET'
+      }, input)
+      idx_body = call('http_request', connection, method: 'GET', url: url_idx, headers: call('build_headers', connection))
+
+      cfg = idx_body.dig('metadata', 'config') || {}
+      out = {
+        'index'              => deployed['index'],
+        'distance_metric'    => (cfg['distanceMeasureType'] || cfg['distance_measure_type']),
+        'feature_norm_type'  => (cfg['featureNormType']     || cfg['feature_norm_type'])
+      }.compact
+
+      call('memo_put', cache_key, out, 600)
+      out
+    end,
 
     # Iterate within a scope path like 'queries[]' or root ('$' or nil)
     each_in_scope: lambda do |data, scope|
@@ -1807,6 +2173,33 @@
       end
     end,
 
+    # methods.extract_ids_for_read (replace with mode-aware version)
+    extract_ids_for_read: lambda do |vars|
+      mode = (vars['id_source'] || 'auto').to_s
+      pick = lambda do |source|
+        case source
+        when 'manual'
+          Array(vars['ids']).compact
+        when 'neighbors'
+          Array(vars['neighbors']).map { |n| n['datapoint_id'] }.compact
+        when 'groups'
+          Array(vars['groups'])
+            .flat_map { |g| Array(g['neighbors']) }
+            .map { |n| n['datapoint_id'] }.compact
+        else # auto: prefer manual → neighbors → groups
+          ids = Array(vars['ids']).compact
+          ids = Array(vars['neighbors']).map { |n| n['datapoint_id'] }.compact if ids.empty?
+          ids = Array(vars['groups']).flat_map { |g| Array(g['neighbors']) }.map { |n| n['datapoint_id'] }.compact if ids.empty?
+          ids
+        end
+      end
+
+      ids = pick.call(mode).map(&:to_s)
+      ids = ids.uniq if vars['unique'] != false
+      error('No datapoint IDs provided or derivable from neighbors/groups') if ids.empty?
+      ids
+    end,
+
     # Extract user configuration safely
     extract_user_config: lambda do |input, cfg_enabled = false, config_ctx = {}|
       cfg = {}
@@ -1814,7 +2207,7 @@
 
       # Prefer config_fields values; fall back to input (back-compat)
       mode = (config_ctx['model_mode'] || input['model_mode'] || '').to_s
-      explicit_model = input['model'] || input['model_override'] || config_ctx['model']
+      explicit_model = config_ctx['model'] || input['model'] || input['model_override']
 
       case mode
       when 'explicit'
@@ -2129,13 +2522,23 @@
             ]}
         ]
       when 'vector.find_neighbors'
-       fields = [
-          { name: 'endpoint_host', label: 'Public endpoint host (vdb)', hint: 'Overrides connection host just for this call (e.g. 123...vdb.vertexai.goog)', optional: true },
-          { name: 'index_endpoint', label: 'Index Endpoint', hint: 'Resource or ID (e.g. projects/.../indexEndpoints/IEP or IEP)', optional: false },
-          { name: 'deployed_index_id', label: 'Deployed Index ID', optional: false },
-          { name: 'neighbor_count', label: 'Neighbors per query', type: 'integer', default: 10 },
-          { name: 'return_full_datapoint', label: 'Return full datapoint', control_type: 'checkbox' },
-          { name: 'queries', label: 'Queries', type: 'array', of: 'object', properties: [
+        fields = [
+          { name: 'endpoint_host', label: 'Public endpoint host (vdb)', hint: 'Overrides connection host just for this call (e.g. <hash>....vdb.vertexai.goog)', optional: true, group: 'Target' },
+          { name: 'index_endpoint', label: 'Index Endpoint', hint: 'Resource or ID (e.g. projects/.../indexEndpoints/IEP or IEP)', optional: false, group: 'Target' },
+          { name: 'deployed_index_id', label: 'Deployed Index ID', optional: false, group: 'Target' },
+          { name: 'neighbor_count', label: 'Neighbors per query', type: 'integer', default: 10, group: 'Query' },
+          { name: 'return_full_datapoint', label: 'Return full datapoint', control_type: 'checkbox', group: 'Query' },
+
+          # NEW: scoring & aggregates
+          { name: 'distance_metric', label: 'Index distance metric', control_type: 'select',
+            pick_list: 'vector_distance_metrics', optional: true, group: 'Scoring & aggregates',
+            hint: 'Set if you want valid confidence scores. For DOT_PRODUCT, set Feature normalization to UNIT_L2_NORM.' },
+          { name: 'feature_norm_type', label: 'Feature normalization', control_type: 'select',
+            pick_list: 'vector_feature_norm_types', optional: true, group: 'Scoring & aggregates' },
+          { name: 'include_stats', label: 'Include aggregate stats', control_type: 'checkbox',
+            default: true, optional: true, group: 'Scoring & aggregates' },
+
+          { name: 'queries', label: 'Queries', type: 'array', of: 'object', group: 'Queries', properties: [
             { name: 'datapoint_id', label: 'Query datapoint ID' },
             { name: 'feature_vector', label: 'Query vector', type: 'array', of: 'number', hint: 'Use either vector or datapoint_id' },
             { name: 'neighbor_count', label: 'Override neighbors for this query', type: 'integer' },
@@ -2147,6 +2550,46 @@
             ]}
           ]}
         ]
+      when 'vector.read_datapoints'
+        mode = (ui_cfg['id_source'] || 'auto').to_s
+        fields = [
+          # Target
+          { name: 'endpoint_host', label: 'Public endpoint host (vdb)', hint: 'Optional override (e.g. <hash>.vdb.vertexai.goog)', optional: true, group: 'Target' },
+          { name: 'index_endpoint', label: 'Index Endpoint', optional: false, group: 'Target', hint: 'Resource or ID (e.g., projects/.../indexEndpoints/IEP or just IEP)' },
+          { name: 'deployed_index_id', label: 'Deployed Index ID', optional: false, group: 'Target' },
+        ]
+        # Helper lambdas to append groups
+        add_manual = lambda {
+          fields << { name: 'ids', label: 'Datapoint IDs (manual)',
+                      type: 'array', of: 'string', optional: true, group: 'IDs' }
+        }
+        add_neighbors = lambda {
+          fields << { name: 'neighbors', label: 'k‑NN neighbors (flattened)',
+                      optional: true, group: 'Map from Find neighbors',
+                      type: 'array', of: 'object', properties: [{ name: 'datapoint_id' }] }
+          fields << { name: 'unique', label: 'Deduplicate IDs',
+                      control_type: 'checkbox', default: true, group: 'Map from Find neighbors' }
+        }
+        add_groups = lambda {
+          fields << { name: 'groups', label: 'k‑NN groups (from Find neighbors)',
+                      optional: true, group: 'Map from Find neighbors',
+                      type: 'array', of: 'object', properties: [
+                        { name: 'neighbors', type: 'array', of: 'object', properties: [{ name: 'datapoint_id' }] }
+                      ] }
+          fields << { name: 'unique', label: 'Deduplicate IDs',
+                      control_type: 'checkbox', default: true, group: 'Map from Find neighbors' }
+        }
+        case mode
+        when 'manual'    then add_manual.call
+        when 'neighbors' then add_neighbors.call
+        when 'groups'    then add_groups.call
+        else # 'auto' (back-compat, shows all)
+          add_manual.call
+          add_neighbors.call
+          add_groups.call
+        end
+
+        fields
       when 'multimodal.analyze'
         fields = [
           { name: 'prompt', label: 'Analysis Prompt', control_type: 'text-area', optional: false },
@@ -2180,7 +2623,7 @@
         end
 
       else
-        fields = []
+        fields ||= []
       end
       
       # Add advanced fields if requested
@@ -2223,7 +2666,10 @@
         [
           { name: 'embeddings', type: 'array', of: 'array' },
           { name: 'vectors', type: 'array', of: 'object', properties: [ { name: 'feature_vector', type: 'array', of: 'number' } ]},
-          { name: 'count', type: 'integer' }
+          { name: 'count', type: 'integer' },
+          { name: 'dimension', type: 'integer' },
+          { name: 'avg_norm', type: 'number' },
+          { name: 'norms', type: 'array', of: 'number' } 
         ]
       when 'vector.upsert_datapoints'
         [
@@ -2231,15 +2677,45 @@
         ]
       when 'vector.find_neighbors'
         [
+          { name: 'summary', type: 'object', properties: [
+            { name: 'groups', type: 'integer' },
+            { name: 'neighbors', type: 'integer' },
+            { name: 'distance_mean', type: 'number' },
+            { name: 'score_mean', type: 'number' },
+            { name: 'score_max',  type: 'number' },
+            { name: 'confidence_mean', type: 'number' },
+            { name: 'confidence_max',  type: 'number' }
+          ]},
           { name: 'groups', type: 'array', of: 'object', properties: [
             { name: 'query_id' },
+            { name: 'stats', type: 'object', properties: [
+              { name: 'neighbor_count', type: 'integer' },
+              { name: 'distance_mean', type: 'number' },
+              { name: 'score_mean',     type: 'number' },
+              { name: 'score_max',      type: 'number' },
+              { name: 'confidence_mean', type: 'number' },
+              { name: 'confidence_max',  type: 'number' }
+            ]},
             { name: 'neighbors', type: 'array', of: 'object', properties: [
-              { name: 'datapoint_id' }, { name: 'distance', type: 'number' }, { name: 'score', type: 'number' },
+              { name: 'datapoint_id' },
+              { name: 'distance', type: 'number' },
+              { name: 'score',    type: 'number' },
+              { name: 'confidence', type: 'number' },
               { name: 'datapoint', type: 'object' }
             ]}
           ]}
         ]
-
+      when 'vector.read_datapoints'
+        [
+          { name: 'datapoints', type: 'array', of: 'object', properties: [
+            { name: 'datapoint_id' },
+            { name: 'feature_vector', type: 'array', of: 'number' },
+            { name: 'restricts', type: 'array', of: 'object' },
+            { name: 'numeric_restricts', type: 'array', of: 'object' },
+            { name: 'crowding_tag', type: 'object' },
+            { name: 'embedding_metadata', type: 'object' }
+          ] }
+        ]
       when 'multimodal.analyze'
         [{ name: 'result', label: 'Analysis' }]
       else
@@ -2249,20 +2725,20 @@
 
     # List Google publisher models (v1beta1)
     list_publisher_models: lambda do |connection, publisher: 'google'|
-      cache_key = "pub_models:#{publisher}"
+      ver = connection['version'].to_s.strip
+      ver = ver.empty? ? 'v1' : ver
+      cache_key = "pub_models:#{publisher}:#{ver}"   # <— include version in key
+
       if (cached = call('memo_get', cache_key))
         return cached
       end
 
       url = call('build_endpoint_url', connection, { 'family' => 'publisher_models', 'publisher' => publisher }, {})
-      resp = call('http_request',
-                  connection,
-                  method: 'GET',
-                  url: url,
+      resp = call('http_request', connection, method: 'GET', url: url,
                   headers: call('build_headers', connection),
                   retry_config: { max_attempts: 3, backoff: 1.0, retry_on: [429, 500, 502, 503, 504] })
 
-      models = (resp['publisherModels'] || []) # shape per REST docs
+      models = (resp['publisherModels'] || [])
       call('memo_put', cache_key, models, 3600)
       models
     end,
@@ -2283,24 +2759,62 @@
     end,
 
     # Normalize FindNeighbors response into a stable, recipe-friendly shape
-    normalize_find_neighbors: lambda do |resp, _input|
-      # Expected: { "nearestNeighbors": [ { "id": "...?", "neighbors": [ { "datapoint": {...}, "distance": n } ] } ] }
-      groups = (resp['nearestNeighbors'] || []).map do |nn|
-        {
-          'query_id' => nn['id'],
-          'neighbors' => (nn['neighbors'] || []).map do |n|
-            did  = n.dig('datapoint', 'datapointId')
-            dist = n['distance']
+    normalize_find_neighbors: lambda do |resp, input|
+      groups_raw = Array(resp['nearestNeighbors'])
+      metric     = input['distance_metric']
+      norm_type  = input['feature_norm_type']
+      include_stats = input.key?('include_stats') ? !!input['include_stats'] : true
+
+      groups = groups_raw.map do |nn|
+        neighbors = Array(nn['neighbors']).map do |n|
+          dist = n['distance']
+          did  = n.dig('datapoint', 'datapointId')
+          {
+            'datapoint_id' => did,
+            'distance'     => dist,
+            # Legacy score: normalized from distance (cosine heuristic)
+            'score'        => call('transform_data', input: dist, from_format: 'distance', to_format: 'similarity'),
+            # New: mathematically valid confidence when possible
+            'confidence'   => call('confidence_from_distance', dist, metric, norm_type),
+            'datapoint'    => n['datapoint']
+          }.compact
+        end
+
+        stats =
+          if include_stats
             {
-              'datapoint_id' => did,
-              'distance'     => dist,
-              'score'        => call('transform_data', input: dist, from_format: 'distance', to_format: 'similarity'),
-              'datapoint'    => n['datapoint']
+              'neighbor_count'   => neighbors.length,
+              'distance_mean'    => call('safe_mean', neighbors.map { |z| z['distance'] }),
+              'score_mean'       => call('safe_mean', neighbors.map { |z| z['score'] }),
+              'score_max'        => (neighbors.map { |z| z['score'] }.compact.max),
+              'confidence_mean'  => call('safe_mean', neighbors.map { |z| z['confidence'] }),
+              'confidence_max'   => (neighbors.map { |z| z['confidence'] }.compact.max)
             }.compact
           end
-        }
+
+        {
+          'query_id'  => nn['id'],
+          'stats'     => stats,
+          'neighbors' => neighbors
+        }.compact
       end
-      { 'groups' => groups }
+
+      # Top-level summary if desired
+      summary =
+        if include_stats
+          flat = groups.flat_map { |g| g['neighbors'] || [] }
+          {
+            'groups'          => groups.length,
+            'neighbors'       => flat.length,
+            'distance_mean'   => call('safe_mean', flat.map { |z| z['distance'] }),
+            'score_mean'      => call('safe_mean', flat.map { |z| z['score'] }),
+            'score_max'       => (flat.map { |z| z['score'] }.compact.max),
+            'confidence_mean' => call('safe_mean', flat.map { |z| z['confidence'] }),
+            'confidence_max'  => (flat.map { |z| z['confidence'] }.compact.max)
+          }.compact
+        end
+
+      { 'summary' => summary, 'groups' => groups }.compact
     end,
 
     normalize_http_error: lambda do |connection, code:, body:, headers:, message:, url:, corr_id:, attempt:, duration_ms:|
@@ -2340,6 +2854,22 @@
         'duration_ms'       => duration_ms,
         'url'               => url
       }
+    end,
+
+    normalize_read_index_datapoints: lambda do |resp, _input|
+      # Expected Vertex shape: { "datapoints": [ { "datapointId": "...", "featureVector": [...],
+      #   "restricts": [...], "numericRestricts": [...], "crowdingTag": {...}, "embeddingMetadata": {...} } ] }
+      dps = Array(resp['datapoints']).map do |d|
+        {
+          'datapoint_id'      => d['datapointId'] || d['id'],
+          'feature_vector'    => Array(d['featureVector']).map(&:to_f),
+          'restricts'         => d['restricts'],
+          'numeric_restricts' => d['numericRestricts'],
+          'crowding_tag'      => d['crowdingTag'],
+          'embedding_metadata'=> d['embeddingMetadata']
+        }.compact
+      end
+      { 'datapoints' => dps }
     end,
 
     # Normalize safety settings
@@ -2422,9 +2952,15 @@
       [408, 429, 500, 502, 503, 504].include?(code.to_i)
     },
 
+    safe_mean: lambda do |arr|
+      xs = Array(arr).compact
+      return nil if xs.empty?
+      xs.map(&:to_f).sum / xs.length
+    end,
+
     # Model selection logic
     select_model: lambda do |behavior_def, cfg, input|
-      # 0) Back-compat: if step explicitly set model (old or new), take it.
+      # 0) Respect explicit model in put
       if (input['model'] && !input['model'].to_s.strip.empty?) ||
         (input['model_override'] && !input['model_override'].to_s.strip.empty?)
         return input['model'] || input['model_override']
@@ -2435,27 +2971,29 @@
       supported = Array(behavior_def[:supported_models]).compact
       default   = cfg.dig(:models, :default)
 
-      # Helper to prefer an item if supported; else first supported; else fallback to default
+      # Prefer an item if supported, else first supported, else default
       prefer = lambda do |*candidates|
-        cand = candidates.flatten.compact.find { |m| supported.include?(m) }
-        cand || (supported.first || default)
+        # Choose the first candidate that is in 'supported'; else first supported; else default
+        c = candidates.flatten.compact.find { |m| supported.include?(m) }
+        c || supported.first || default
       end
 
       case mode
       when 'connection'
-        # Use the connection default even if it's an alias; API will accept aliases
-        default || supported.first
+        # Only honor connection default if it's supported by this behavior
+        return default if supported.include?(default)
+        return supported.first || default
       when 'explicit'
-        # No explicit in input => fall back to connection default
-        default || supported.first
+        # If user chose 'explicit' but didn't supply a model, pick a safe supported default
+        return supported.first || default
       else # 'auto'
         if behavior_def[:capability].to_s == 'embedding'
           case strategy
-          when 'cost'        then prefer.call('textembedding-gecko', 'text-embedding-004')
-          when 'performance' then prefer.call('text-embedding-004', 'textembedding-gecko')
-          else                    prefer.call('text-embedding-004', 'textembedding-gecko')
+          when 'cost'        then prefer.call('textembedding-gecko', 'text-embedding-005', 'text-embedding-004')
+          when 'performance' then prefer.call('gemini-embedding-001', 'text-embedding-005', 'textembedding-gecko', 'text-embedding-004')
+          else                    prefer.call('text-embedding-005', 'gemini-embedding-001', 'textembedding-gecko', 'text-embedding-004')
           end
-        else # generation/multimodal
+        else
           case strategy
           when 'cost'        then prefer.call('gemini-1.5-flash', 'gemini-1.5-pro')
           when 'performance' then prefer.call('gemini-1.5-pro',   'gemini-1.5-flash')
@@ -2550,49 +3088,23 @@
       end
       arr = Array(raw).map { |v| Array(v).map(&:to_f) }
 
+      norms = arr.map { |v| Math.sqrt(v.reduce(0.0) { |s, x| s + (x.to_f * x.to_f) }) }
+      dim   = arr.first ? arr.first.length : nil
+
       out = {
         'embeddings' => arr,
         'vectors'    => arr.map { |v| { 'feature_vector' => v } },
-        'count'      => arr.length
-      }
+        'count'      => arr.length,
+        'dimension'  => dim,
+        'norms'      => norms,
+        'avg_norm'   => call('safe_mean', norms)
+      }.compact
+
       if response.is_a?(Hash) && response['_trace']
         out['_trace'] = response['_trace']
       end
       out
-    end,
-
-    # Turn embeddings (+ optional options) into IndexDatapoints
-    coerce_embeddings_to_datapoints: lambda do |vars|
-      embeddings = Array(vars['embeddings'])
-      error('No embeddings provided') if embeddings.empty?
-
-      ids     = Array(vars['datapoint_ids'])
-      prefix  = (vars['datapoint_id_prefix'] || 'dp_').to_s
-      start   = (vars['start_index'] || 1).to_i
-      pad_to  = (vars['pad_to'] || 6).to_i
-
-      if ids.empty?
-        ids = embeddings.each_index.map { |i| "#{prefix}#{(start + i).to_s.rjust(pad_to, '0')}" }
-      elsif ids.length != embeddings.length
-        error("datapoint_ids length (#{ids.length}) must match embeddings length (#{embeddings.length})")
-      end
-
-      common_restricts        = vars['common_restricts']
-      common_numeric          = vars['common_numeric_restricts']
-      common_crowding_tag     = vars['common_crowding_tag']
-      common_embedding_meta   = vars['embedding_metadata']
-
-      embeddings.each_with_index.map do |vec, i|
-        {
-          'datapointId'       => ids[i],
-          'featureVector'     => Array(vec).map(&:to_f),
-          'restricts'         => common_restricts,
-          'numericRestricts'  => common_numeric,
-          'crowdingTag'       => common_crowding_tag,
-          'embeddingMetadata' => common_embedding_meta
-        }.compact
-      end
-    end,
+    end
 
   },
 
@@ -2664,13 +3176,6 @@
       ]
     end,
 
-    models_embedding_dynamic: lambda do |connection|
-      call('list_publisher_models', connection)
-        .map { |m| id = (m['name'] || '').split('/').last; [m['displayName'] || id, id] }
-        .select { |_label, id| id.start_with?('text-embedding-') || id.start_with?('textembedding-') }
-        .sort_by { |_label, id| - (id[/-(\d+)$/, 1].to_i) }
-    end,
-
     models_for_behavior: lambda do |connection, input = {}|
       behavior = input['behavior']
       defn = call('behavior_registry')[behavior]
@@ -2685,13 +3190,38 @@
     end,
 
     models_dynamic_for_behavior: lambda do |connection, behavior: nil, **_|
-      prefixes = (behavior.to_s == 'text.embed') ? ['text-embedding-', 'textembedding-'] : ['gemini-']
-      call('list_publisher_models', connection)
-        .map { |m| id = (m['name'] || '').split('/').last; [m['displayName'] || id, id] }
-        .select { |_label, id| prefixes.any? { |p| id.start_with?(p) } }
-        .sort_by { |_label, id| - (id[/-(\d+)$/, 1].to_i) }
+      prefixes = if behavior.to_s == 'text.embed'
+        ['text-embedding-', 'textembedding-', 'gemini-embedding-']
+      else
+        ['gemini-'] # last
+      end
+      items = []
+      begin
+        items = call('list_publisher_models', connection)
+          .map { |m| id = (m['name'] || '').split('/').last; [m['displayName'] || id, id] }
+          .select { |_label, id| prefixes.any? { |p| id.start_with?(p) } }
+          .sort_by { |_label, id| - (id[/(\d+)$/, 1].to_i) } # still works for hyphen & @ suffixes
+      rescue
+        items = [] # fall through to fallback
+      end
+
+      if items.empty?
+        # Minimal, safe fallback to keep the UI usable before a connection is fully ready.
+        items = if prefixes.first == 'gemini-'
+          [['Gemini 2.5 Flash', 'gemini-2.5-flash'], ['Gemini 2.5 Pro', 'gemini-2.5-pro']]
+        else
+          [
+            ['Gemini Embedding 001',   'gemini-embedding-001'],
+            ['Text Embedding 005',     'text-embedding-005'],
+            ['Text Embedding 004',     'text-embedding-004'],
+            ['Text Embedding Gecko',   'textembedding-gecko']
+          ]
+        end
+      end
+      items
     end,
 
+    # DEPRECATED: remove after testing/development
     models_generation_dynamic: lambda do |connection|
       call('list_publisher_models', connection)
         .map { |m| id = (m['name'] || '').split('/').last; [m['displayName'] || id, id] }
@@ -2730,6 +3260,22 @@
       [
         ['By severity',    'SEVERITY'],
         ['By probability', 'PROBABILITY']
+      ]
+    end,
+  
+    vector_distance_metrics: lambda do |_|
+      [
+        ['Cosine distance (1 - cos_sim)', 'COSINE_DISTANCE'],
+        ['Dot-product distance (−dot)',   'DOT_PRODUCT_DISTANCE'],
+        ['Squared L2 (Euclidean^2)',      'SQUARED_L2_DISTANCE'],
+        ['L1 (Manhattan)',                'L1_DISTANCE']
+      ]
+    end,
+
+    vector_feature_norm_types: lambda do |_|
+      [
+        ['Unit L2 norm', 'UNIT_L2_NORM'],
+        ['None',         'NONE']
       ]
     end
   },

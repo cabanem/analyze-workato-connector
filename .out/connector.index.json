@@ -1,0 +1,13 @@
+{
+  "artifacts": {
+    "json": "./out/connector.ir.json",
+    "dot": "./out/connector.graph.dot",
+    "graph_json": "./out/connector.graph.json",
+    "ndjson": "./out/connector.events.ndjson",
+    "sourcemap": "./out/connector.sourcemap.json",
+    "embed": "./out/connector.embed.jsonl",
+    "tokens": "./out/connector.tokens.ndjson",
+    "sarif": "./out/connector.sarif.json",
+    "schema": "./out/connector.schema.json"
+  }
+}

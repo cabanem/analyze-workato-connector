@@ -463,6 +463,9 @@ class ConnectorWalker
     children << extract_actions(hash_node)
     children << extract_triggers(hash_node)
     children << extract_pick_lists(hash_node)
+    children << extract_webhook_keys(hash_node)
+    children << extract_streams(hash_node)
+
     children.compact!
 
     root.with_children(children)
@@ -508,11 +511,11 @@ class ConnectorWalker
   end
 
   def extract_docstring(node)
+    # Don't favor inline comments
+    # Instead, prefer leading comments (associated by Parser::Source::Comment.associate)
     return nil unless node && @comments && @comments[node]
-    # Concatenate leading comments; avoid mutating originals
-    lines = @comments[node].select { |c| !c.respond_to?(:inline?) || c.inline? }.map(&:text)
-    # Fallback to preceding non-inline comments if needed
-    lines = @comments[node].map(&:text) if lines.empty?
+    # Keep order; strip leading '# '
+    lines = @comments[node].map { |c| c.text.sub(/\A#\s?/, '') }
     lines.empty? ? nil : lines.join("\n")
   end
 
@@ -662,6 +665,28 @@ class ConnectorWalker
     IR::Node.new(kind: 'trigger', name: name, loc: Util.node_loc(body_hash), meta: { keys: keys.sort })
   end
 
+  def extract_streams(root_hash)
+    node = key_value(root_hash, 'streams')
+    return unless node
+    # Collect immediate stream names (labels) for graphing/summary
+    entries = (node.type == :hash ? hash_pairs(node) : []).map do |pair|
+      name = Util.sym_or_str(pair.children[0]) || '(dynamic)'
+      IR::Node.new(kind: 'stream', name: name, loc: Util.node_loc(pair.children[1]), meta: {})
+    end
+    IR::Node.new(kind: 'streams', name: 'streams', loc: Util.node_loc(node), meta: {}, children: entries)
+  end
+
+  def extract_webhook_keys(root_hash)
+    wk = key_value(root_hash, 'webhook_keys')
+    return unless wk
+    if (l = first_lambda(wk))
+      register_lambda_in_graph('connector#webhook_keys', l[:body], 'webhook_keys', l[:loc])
+    else
+      issue(:warning, 'webhook_keys_not_lambda', 'webhook_keys is not a lambda/proc', Util.node_loc(wk))
+    end
+    IR::Node.new(kind: 'webhook_keys', name: 'webhook_keys', loc: Util.node_loc(wk), meta: {})
+  end
+
   # ---------- helpers ---------------------------------------------------------
 
   def first_child(node)
@@ -695,9 +720,13 @@ class ConnectorWalker
       is_lambda = (send_node.type == :lambda) ||
                   (send_node.type == :send && [:lambda, :proc].include?(send_node.children[1])) ||
                   (send_node.type == :send && send_node.children[1] == :new && Util.const_name(send_node.children[0]) == 'Proc')
+      
+      # `{}` blocks appear as :block too; keep same detection
       if is_lambda
         { body: node, args: extract_args(args_node), loc: Util.node_loc(node) }
       end
+      when :numblock # Ruby 2.7+ shorthand `{ _1 }`; treat as lambda-like for salvage
+        { body: node, args: [], loc: Util.node_loc(node) }
     else
       nil
     end
@@ -737,16 +766,26 @@ class ConnectorWalker
               else
                 nil
               end
-        http_node_id = "#{owner_label}::http##{mname}(#{lit ? lit[0..50] : '...'} )"
+        http_node_id = "#{owner_label}::http##{mname}(#{lit ? lit[0..50] : '...'})"
         @graph.add_node(http_node_id, label: "#{mname.upcase} #{lit || '(dynamic)'}", kind: 'http')
         @graph.add_edge(owner_label, http_node_id, label: 'calls')
         @stats["http_#{mname}"] += 1
-      elsif mname == :call && args[0] && (args[0].type == :sym || args[0].type == :str)
+      elsif mname == :call && recv.nil? && args[0] && (args[0].type == :sym || args[0].type == :str)
         meth = args[0].children[0].to_s
-        @methods_called << { from: owner_label, to: "method:#{meth}", name: meth, loc: loc }
-        @graph.add_node("method:#{meth}", label: "method:#{meth}", kind: 'method')
-        @graph.add_edge(owner_label, "method:#{meth}", label: 'calls')
-        @stats['method_calls'] += 1
+        # Only treat as a Workato method when it looks like a valid identifier,
+        # not a model id like "gemini-1.5-pro" or "text-embedding-004".
+        if meth.match?(/\A[A-Za-z_][A-Za-z0-9_]*\z/)
+          @methods_called << { from: owner_label, to: "method:#{meth}", name: meth, loc: loc }
+          @graph.add_node("method:#{meth}", label: "method:#{meth}", kind: 'method')
+          @graph.add_edge(owner_label, "method:#{meth}", label: 'calls')
+          @stats['method_calls'] += 1
+        end
+     elsif mname == :after_error_response
+       @graph.add_edge(owner_label, owner_label, label: 'after_error_response')
+       @stats['error_handlers'] += 1
+     elsif mname == :checkpoint!
+       @graph.add_edge(owner_label, owner_label, label: 'checkpoint!')
+       @stats['streaming_checkpoints'] += 1
       elsif mname == :eval || mname == :system
         issue(:warning, 'dangerous_call', "Use of #{mname} inside #{owner_label}", Util.node_loc(n))
       end
@@ -793,32 +832,44 @@ end
 # ------------------------------ Emitters -------------------------------------
 
 class Emit
-  def self.write_all(bundle:, outdir:, base:, pretty:, graph_name:, ndjson:, source: nil)
+  def self.write_all(bundle:, outdir:, base:, pretty:, graph_name:, ndjson:, source: nil, emit: [])
     Dir.mkdir(outdir) unless Dir.exist?(outdir)
 
     paths = {}
 
-    # IR JSON
-    paths[:json] = write_json(
-      File.join(outdir, Util.safe_filename("#{base}.ir", '.json')), bundle.to_h, pretty)
+    # JSON
+    if emit.include?('json')
+      paths[:json] = write_json(
+        File.join(outdir, Util.safe_filename("#{base}.ir", '.json')), bundle.to_h, pretty)
+    end
 
     # DOT
-    paths[:dot] = write_text(
-      File.join(outdir, Util.safe_filename("#{base}.graph", '.dot')), bundle.graph.to_dot(name: graph_name))
+    if emit.include?('dot')
+      paths[:dot] = write_text(
+        File.join(outdir, Util.safe_filename("#{base}.graph", '.dot')),
+        bundle.graph.to_dot(name: graph_name))
+    end
 
     # Graph JSON
-    paths[:graph_json] = write_json(File.join(outdir, Util.safe_filename("#{base}.graph", '.json')),
-      {
-        nodes: bundle.graph.nodes.map { |id, info| { id: id, **info } },
-        edges: bundle.graph.edges.to_a.map { |from, to, meta| { from: from, to: to, **(meta || {}) } }
-      }, pretty)
+    if emit.include?('graphjson')
+      paths[:graph_json] = write_json(
+        File.join(outdir, Util.safe_filename("#{base}.graph", '.json')),
+        { nodes: bundle.graph.nodes.map { |id, info| { id: id, **info } },
+          edges: bundle.graph.edges.to_a.map { |from, to, meta| { from: from, to: to, **(meta || {}) } } }, pretty)
+    end
+
 
     # Markdown summary
-    paths[:md] = write_text(
-      File.join(outdir, Util.safe_filename("#{base}.summary", '.md')), markdown_summary(bundle))
+    if emit.include?('graphjson')
+      paths[:graph_json] = write_json(
+        File.join(outdir, Util.safe_filename("#{base}.graph", '.json')),
+        { nodes: bundle.graph.nodes.map { |id, info| { id: id, **info } },
+          edges: bundle.graph.edges.to_a.map { |from, to, meta| { from: from, to: to, **(meta || {}) } } }, pretty)
+    end
+
 
     # NDJSON events (issues + http calls)
-    if ndjson
+    if ndjson && emit.include?('ndjson')
       paths[:ndjson] = write_ndjson(File.join(outdir, Util.safe_filename("#{base}.events", '.ndjson'))) do |f|
         bundle.issues.each { |iss| f.puts({ type: 'issue', **iss.to_h }.to_json) }
         bundle.graph.edges.each do |from, to, meta|
@@ -828,7 +879,7 @@ class Emit
     end
 
     # Sourcemap JSON
-    if source && bundle.root
+    if source && bundle.root && emit.include?('sourcemap')
       smap = {}
       walk = lambda do |n|
         smap[n.id] = { kind: n.kind, name: n.name, loc: n.loc }
@@ -840,7 +891,7 @@ class Emit
     end
 
     # Embedding JSONL (atoms)
-    if source && bundle.root
+    if source && bundle.root && emit.include?('embed')
       paths[:embed] = write_ndjson(File.join(outdir, Util.safe_filename("#{base}.embed", '.jsonl'))) do |f|
         enumerate_atoms(bundle).each do |atom|
           text = Util.slice_source(source, atom[:loc])
@@ -850,7 +901,7 @@ class Emit
     end
 
     # Tokens NDJSON (fallback lexical stream)
-    if source
+    if source && emit.include?('tokens')
       paths[:tokens] = write_ndjson(File.join(outdir, Util.safe_filename("#{base}.tokens", '.ndjson'))) do |f|
         (Ripper.lex(source) || []).each do |(pos, type, str, _)|
           line, col = pos
@@ -863,15 +914,15 @@ class Emit
 
     # SARIF
     paths[:sarif] = write_json(
-      File.join(outdir, Util.safe_filename("#{base}.sarif", '.json')), sarif(bundle), pretty)
+      File.join(outdir, Util.safe_filename("#{base}.sarif", '.json')), sarif(bundle), pretty) if emit.include?('sarif')
 
     # JSON Schema for IR (coarse, versioned)
     paths[:schema] = write_json(
-      File.join(outdir, Util.safe_filename("#{base}.schema", '.json')), ir_schema(version: "1-0-0"), true)
+      File.join(outdir, Util.safe_filename("#{base}.schema", '.json')), ir_schema(version: "1-0-0"), true) if emit.include?('schema')
 
     # Index
     paths[:index] = write_json(
-      File.join(outdir, Util.safe_filename("#{base}.index", '.json')), { artifacts: paths.compact }, true)
+      File.join(outdir, Util.safe_filename("#{base}.index", '.json')), { artifacts: paths.compact }, true) if emit.include?('index')
     paths
   end
 
@@ -908,13 +959,9 @@ class Emit
   end
 
   def self.compute_begin_pos(source, line, col)
-    # Fast single pass index (cached by caller if needed)
-    @line_index ||= begin
-      idx = [0]
-      source.each_line { |l| idx << (idx.last + l.bytesize) }
-      idx
-    end
-    (@line_index[line - 1] || 0) + col
+    idx = [0]
+    source.each_line { |l| idx << (idx.last + l.bytesize) }
+    (idx[line - 1] || 0) + col
   end
 
   def self.write_json(path, obj, pretty)
@@ -1114,9 +1161,10 @@ class CLI
       end
 
     # 4) Emit
-    Emit.write_all(bundle: bundle, outdir: options[:outdir], base: options[:base],
-                  pretty: options[:pretty], graph_name: options[:graph_name],
-                  ndjson: options[:emit].include?('ndjson'), source: source)
+    Emit.write_all(bundle: bundle, outdir: options[:outdir], base: options[:base], pretty: options[:pretty], graph_name: options[:graph_name],
+      ndjson: options[:emit].include?('ndjson'),
+      source: source,
+      emit: options[:emit])
 
     # 5) Selectively print summary path for convenience
     puts "Wrote outputs to #{options[:outdir]}"

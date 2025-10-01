@@ -1,0 +1,162 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Workato Connector Inspector",
+          "informationUri": "https://github.com/workato/workato-connector-sdk",
+          "rules": [
+            {
+              "id": "unused_method",
+              "name": "unused_method"
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.add_upsert_ack is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.add_word_count is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.coerce_kwargs is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.normalize_find_neighbors is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.normalize_read_index_datapoints is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.to_query is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.wrap_embeddings_vectors is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
