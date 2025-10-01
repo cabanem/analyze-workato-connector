@@ -1,53 +1,41 @@
 {
   "name": "Workato Connector Inspector",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
-  "features": {
-    "ghcr.io/devcontainers/features/ruby:1": {
-      "version": "3.2"
-    },
-    "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/devcontainers/features/common-utils:2": {}
+  "build": {
+    "dockerfile": "Dockerfile"
   },
+
+  "remoteUser": "vscode",
+
   "customizations": {
     "vscode": {
       "extensions": [
         "Shopify.ruby-lsp",
         "rebornix.Ruby",
-        "EditorConfig.EditorConfig"
+        "EditorConfig.EditorConfig",
+        "eamodio.gitlens"
       ],
       "settings": {
         "files.insertFinalNewline": true,
-        "editor": {
-          "formatOnSave": true,
-          "fontSize": 14,
-          "fontFamily": "'Cascadia Code', 'Courier New', monospace"
+        "rubyLsp.enabled": true,
+        "rubyLsp.enabledFeatures": {
+          "formatting": true,
+          "diagnostics": true
         },
-        "rubyLsp": {
-          "enabled": true,
-          "enabledFeatures": {
-            "formatting": true,
-            "diagnostics": true
-          }
-        },
-        "terminal.integrated": {
-          "fontSize": 14,
-          "fontFamily": "'Cascadia Code', 'Courier New', monospace"
-        },
-        "workbench": {
-          "colorTheme": "GitHub Dark Default",
-          "iconTheme": "vs-seti"
-        }
+        "editor.formatOnSave": true,
+        "editor.fontSize": 14,
+        "editor.fontFamily": "'Cascadia Code', 'Courier New', monospace",
+        "terminal.integrated.fontSize": 14,
+        "terminal.integrated.fontFamily": "'Cascadia Code', 'Courier New', monospace",
+        "workbench.colorTheme": "GitHub Dark Default",
+        "workbench.iconTheme": "vs-seti"
       }
     }
   },
-  "remoteUser": "vscode",
-  "postCreateCommand": "bundle install",
+
+  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  "postStartCommand": "bash .devcontainer/postStart.sh",
+
   "postAttachCommand": {
     "server": "echo 'Ready. Try: bin/run path/to/connector.rb --outdir ./out'"
-  },
-  "updateContentCommand": "bundle install",
-  "containerEnv": {
-    "BUNDLE_PATH": "vendor/bundle"
   }
 }
-
