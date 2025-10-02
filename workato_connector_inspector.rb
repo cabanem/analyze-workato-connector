@@ -2,20 +2,11 @@
 # frozen_string_literal: true
 
 # === Workato Connector Inspector ============================================
+#
 # Parses a Workato-style Ruby connector, builds an IR + call graph, flags issues,
 # and emits JSON/DOT/Markdown/NDJSON outputs — without executing connector code.
 #
-# Design goals:
-# - Scales to large connectors
-# - Flexible with connector structure/order
-# - Preserves source locations for precise debugging
-# - Tolerant of syntax/coding-style variations
-# - Graceful salvage when code is not syntactically correct
-#
-# Dependencies:
-#   gem install parser
-#
-# Usage:
+# Usage example:
 #   ruby workato_connector_inspect.rb path/to/connector.rb \
 #     --emit json,md,dot,ndjson \
 #     --outdir ./out \
@@ -23,17 +14,10 @@
 #     --max-warnings 1000 \
 #     --graph-name MyConnector
 #
-# Outputs (in --outdir):
-#   - connector.ir.json          (IR incl. source locations and issues)
-#   - connector.graph.dot        (call graph)
-#   - connector.summary.md       (LLM-friendly summary)
-#   - connector.events.ndjson    (line-oriented events for indexing)
-#
-# Notes:
-# - We never eval connector code. This is purely static analysis.
-# - Fallback (Ripper) provides partial IR if full AST parse fails.
-#
 # ============================================================================
+
+# ----------------------------- Dependencies ---------------------------------
+
 require 'optparse'
 require 'json'
 require 'set'
@@ -790,15 +774,23 @@ class ConnectorWalker
         @graph.add_node(http_node_id, label: "#{mname.upcase} #{lit || '(dynamic)'}", kind: 'http')
         @graph.add_edge(owner_label, http_node_id, label: 'calls')
         @stats["http_#{mname}"] += 1
-      elsif mname == :call && recv.nil? && args[0] && (args[0].type == :sym || args[0].type == :str)
-        meth = args[0].children[0].to_s
-        # Only treat as a Workato method when it looks like a valid identifier,
-        # not a model id like "gemini-1.5-pro" or "text-embedding-004".
-        if meth.match?(/\A[A-Za-z_][A-Za-z0-9_]*\z/)
-          @methods_called << { from: owner_label, to: "method:#{meth}", name: meth, loc: loc }
-          @graph.add_node("method:#{meth}", label: "method:#{meth}", kind: 'method')
-          @graph.add_edge(owner_label, "method:#{meth}", label: 'calls')
-          @stats['method_calls'] += 1
+      elsif mname == :call && recv.nil?
+        if args[0] && (args[0].type == :sym || args[0].type == :str)
+          meth = args[0].children[0].to_s
+          # Only treat as a Workato method when it looks like a valid identifier,
+          # not a model id like "gemini-1.5-pro" or "text-embedding-004".
+          if meth.match?(/\A[A-Za-z_][A-Za-z0-9_]*\z/)
+            call_loc = Util.node_loc(n) # <-- use the actual send-node location
+            @methods_called << { from: owner_label, to: "method:#{meth}", name: meth, loc: call_loc }
+            @graph.add_node("method:#{meth}", label: "method:#{meth}", kind: 'method')
+            @graph.add_edge(owner_label, "method:#{meth}", label: 'calls')
+            @stats['method_calls'] += 1
+          end
+        else
+          # Dynamic dispatch: call(variable) — hard to analyze and can hide cycles
+          issue(:warning, 'dynamic_call',
+                "Dynamic method dispatch via call(#{args[0]&.type || 'unknown'}) in #{owner_label}",
+                Util.node_loc(n))
         end
      elsif mname == :after_error_response
        @graph.add_edge(owner_label, owner_label, label: 'after_error_response')
@@ -837,6 +829,9 @@ class ConnectorWalker
       end
     end
 
+    # Method call cycles (methods: call(:foo) graph)
+    detect_method_cycles
+
     # Counters
     @stats['actions'] = count_kind(root, 'action')
     @stats['triggers'] = count_kind(root, 'trigger')
@@ -847,6 +842,100 @@ class ConnectorWalker
     return 0 unless node
     (node.kind == kind ? 1 : 0) + node.children.sum { |ch| count_kind(ch, kind) }
   end
+
+  def detect_method_cycles
+    # Build adjacency (method_name -> Set[method_name]) from recorded call edges
+    adj      = Hash.new { |h,k| h[k] = Set.new }
+    edge_loc = Hash.new { |h,k| h[k] = [] }
+
+    @methods_called.each do |c|
+      from_label = c[:from]            # e.g., "method:foo" or "action:bar#execute"
+      to_label   = c[:to]              # e.g., "method:baz"
+      next unless from_label.start_with?('method:') && to_label.start_with?('method:')
+      from_m = from_label.split(':', 2)[1]
+      to_m   = to_label.split(':',   2)[1]
+      adj[from_m] << to_m
+      edge_loc[[from_m, to_m]] << (c[:loc] || {})
+    end
+
+    nodes = (@methods_defined.to_a | adj.keys | adj.values.flat_map(&:to_a)).uniq
+    sccs  = tarjan_scc(nodes, adj)
+
+    cycle_count = 0
+
+    sccs.each do |comp|
+      if comp.size > 1
+        cycle_count += 1
+        loc = find_any_edge_loc_in_comp(comp, edge_loc) || {}
+        issue(:error, 'method_cycle',
+              "methods cycle: #{comp.join(' → ')} → #{comp.first}",
+              loc, { cycle: comp })
+      elsif comp.size == 1
+        n = comp.first
+        if adj[n].include?(n)
+          cycle_count += 1
+          loc = (edge_loc[[n, n]]&.first) || {}
+          issue(:error, 'method_cycle',
+                "methods self-recursion: #{n} calls itself",
+                loc, { cycle: [n] })
+        end
+      end
+    end
+
+    @stats['method_graph_nodes'] = nodes.size
+    @stats['method_graph_edges'] = adj.values.sum(&:size)
+    @stats['method_cycles']      = cycle_count
+  end
+
+  def tarjan_scc(nodes, adj)
+    index = 0
+    stack = []
+    onstk = {}
+    idx   = {}
+    low   = {}
+    comps = []
+
+    strongconnect = lambda do |v|
+      idx[v] = index
+      low[v] = index
+      index += 1
+      stack.push(v)
+      onstk[v] = true
+
+      (adj[v] || []).each do |w|
+        if !idx.key?(w)
+          strongconnect.call(w)
+          low[v] = [low[v], low[w]].min
+        elsif onstk[w]
+          low[v] = [low[v], idx[w]].min
+        end
+      end
+
+      if low[v] == idx[v]
+        comp = []
+        begin
+          w = stack.pop
+          onstk[w] = false
+          comp << w
+        end until w == v
+        comps << comp
+      end
+    end
+
+    nodes.each { |v| strongconnect.call(v) unless idx.key?(v) }
+    comps
+  end
+
+  def find_any_edge_loc_in_comp(comp, edge_loc)
+    comp.each do |a|
+      comp.each do |b|
+        locs = edge_loc[[a, b]]
+        return locs.first if locs && !locs.empty?
+      end
+    end
+    nil
+  end
+
 end
 
 # ------------------------------ Emitters -------------------------------------

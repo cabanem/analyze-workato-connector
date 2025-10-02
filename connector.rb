@@ -229,8 +229,9 @@
     call('list_publisher_models', connection) # raises normalized errors
 
     # 2) Regional reachability / permissions
+    host = (region.to_s == 'global') ? 'aiplatform.googleapis.com' : "#{region}-aiplatform.googleapis.com"
     url = call('build_endpoint_url', connection,
-      { 'custom_path' => "https://{region}-aiplatform.googleapis.com/#{connection['version']}/projects/{project}/locations/{region}/endpoints" },
+      { 'custom_path' => "https://#{host}/#{connection['version']}/projects/{project}/locations/{region}/endpoints" },
       {}
     )
     call('http_request', connection, method: 'GET', url: url, headers: call('build_headers', connection))
@@ -247,7 +248,6 @@
   # Listed alphabetically within each subsection.
   actions: {
 
-    #
     # ------ UNIVERSAL ACTIONS ----------------------------------
     # Batch Operation
     batch_operation: {
@@ -366,30 +366,15 @@
           default: 'auto', optional: false, sticky: true, extends_schema: true, # forces input_fields to re-render when changed
           hint: 'Switch to Explicit to pick an exact Vertex model for this step.'
         },
-        { name: 'model',
-          label: 'Model',
-          group: 'Model & tuning',
-          control_type: 'select',
-          sticky: true,
-          optional: true,
-          extends_schema: true,
-          ngIf: 'input.model_mode == "explicit"',
-          pick_list: 'models_dynamic_for_behavior', 
-          pick_list_params: { behavior: 'behavior' },  # bind by field by NAME
-          toggle_hint: 'Select from list',
-          toggle_field: {
-            name: 'model',
-            label: 'Model (custom id)',
-            type: 'string',
-            control_type: 'text',
-            optional: true,
-            toggle_hint: 'Provide custom value'
-          } },
-        { name: 'lock_model_revision',
-          label: 'Lock to latest numbered revision',
-          control_type: 'checkbox',
-          group: 'Model & tuning',
-          ngIf: 'input.model_mode == "explicit"',
+        # @note PATCH 2025-10-01-D removed ngIf, field behavior is configuration driven
+        { name: 'model', label: 'Model', group: 'Model & tuning', control_type: 'select', sticky: true, 
+          optional: true, extends_schema: true, pick_list: 'models_dynamic_for_behavior',  pick_list_params: { behavior: 'behavior' },
+          toggle_hint: 'Select from list', toggle_field: {
+            name: 'model', label: 'Model (custom id)',
+            type: 'string', control_type: 'text',
+            optional: true, toggle_hint: 'Provide custom value' } },
+        { name: 'lock_model_revision', label: 'Lock to latest numbered revision',
+          control_type: 'checkbox', group: 'Model & tuning',
           hint: 'Resolves alias (e.g., gemini-1.5-pro) to highest numeric rev at runtime.' },
         { name: 'advanced_config', label: 'Show Advanced Configuration', control_type: 'checkbox', extends_schema: true, optional: true, default: false }
       ],
@@ -426,7 +411,7 @@
           { "success"=>true, "timestamp"=>"2025-01-01T00:00:00Z",
             "metadata"=>{ "operation"=>"text.translate", "model"=>"gemini-1.5-flash" },
             "trace"=>{ "correlation_id"=>"abc", "duration_ms"=>42, "attempt"=>1 },
-            "result"=>"Hola mundo.", "detected_language"=>"en" }
+            "result"=>"Hola mundo." }
         when 'text.summarize'
           { "success"=>true, "timestamp"=>"2025-01-01T00:00:00Z",
             "metadata"=>{ "operation"=>"text.summarize", "model"=>"gemini-1.5-flash" },
@@ -509,18 +494,11 @@
             ['Use connection default',        'connection'] ],
           sticky: true, extends_schema: true, # forces input_fields to re-render when changed
           hint: 'Switch to Explicit to pick an exact Vertex model for this step.' },
-        { name: 'model',
-          label: 'Model',
-          group: 'Model & tuning',
-          control_type: 'select',
-          sticky: true,
-          optional: true,
-          extends_schema: true,
-          ngIf: 'input.model_mode == "explicit"',
-          pick_list: 'models_dynamic_for_behavior',
-          toggle_hint: 'Select from list',
-          toggle_field: { name: 'model', label: 'Model (custom id)', type: 'string', control_type: 'text', optional: true, toggle_hint: 'Provide custom value' }},
-        { name: 'lock_model_revision', label: 'Lock to latest numbered revision', control_type: 'checkbox', group: 'Model & tuning', ngIf: 'input.model_mode == "explicit"' },
+        # @note PATCH 2025-10-01-D removed ngIf, field behavior is configuration driven
+        { name: 'model', label: 'Model', group: 'Model & tuning', control_type: 'select',
+          sticky: true, optional: true, extends_schema: true, pick_list: 'models_dynamic_for_behavior',
+          toggle_hint: 'Select from list', toggle_field: { name: 'model', label: 'Model (custom id)', type: 'string', control_type: 'text', optional: true, toggle_hint: 'Provide custom value' }},
+        { name: 'lock_model_revision', label: 'Lock to latest numbered revision', control_type: 'checkbox', group: 'Model & tuning' },
         { name: 'advanced_config', label: 'Show Advanced Configuration', control_type: 'checkbox', extends_schema: true, optional: true, default: false }
       ],
 
@@ -576,12 +554,12 @@
             ['Use connection default',         'connection']
           ],
           hint: 'Switch to Explicit to pick an exact Vertex model for this step.' },
+        # @note PATCH 2025-10-01-D removed ngIf, field behavior is configuration driven
         { name: 'model', label: 'Model', group: 'Model & tuning', control_type: 'select', sticky: true, optional: true, extends_schema: true,
-          ngIf: 'input.model_mode == "explicit"', pick_list: 'models_dynamic_for_behavior', pick_list_params: { behavior: 'text.generate' },
-          toggle_hint: 'Select from list', toggle_field: { name: 'model', label: 'Model (custom id)', type: 'string',
-            control_type: 'text', optional: true, toggle_hint: 'Provide custom value' } },
+          pick_list: 'models_dynamic_for_behavior', pick_list_params: { behavior: 'text.generate' }, toggle_hint: 'Select from list', 
+          toggle_field: { name: 'model', label: 'Model (custom id)', type: 'string', control_type: 'text', optional: true, toggle_hint: 'Provide custom value' } },
         { name: 'lock_model_revision', label: 'Lock to latest numbered revision', control_type: 'checkbox', group: 'Model & tuning',
-          ngIf: 'input.model_mode == "explicit"', hint: 'Resolves alias (e.g., gemini-1.5-pro) to highest numeric rev at runtime.' },
+          hint: 'Resolves alias (e.g., gemini-1.5-pro) to highest numeric rev at runtime.' },
         { name: 'advanced_config', label: 'Show Advanced Configuration', control_type: 'checkbox', extends_schema: true, optional: true, default: false }
       ],
 
@@ -762,11 +740,12 @@
             ['Explicit (choose model below)', 'explicit'],
             ['Use connection default',        'connection'] ],
           hint: 'Switch to Explicit to pick an exact Vertex model for this step.', sticky: true, extends_schema: true },
-        # @note PATCH 10/01/25-2 added picklist params for picklist
-        { name: 'model', label: 'Model', group: 'Model & tuning', control_type: 'select', sticky: true, optional: true, extends_schema: true,
-          ngIf: 'input.model_mode == "explicit"', pick_list: 'models_dynamic_for_behavior', pick_list_params: { behavior: 'text.embed' }, toggle_hint: 'Select from list', 
+        # @note PATCH 2025-10-01-B added picklist params for picklist
+        # @note PATCH 2025-10-01-D removed ngIf, field behavior is configuration driven
+        { name: 'model', label: 'Model', group: 'Model & tuning', control_type: 'select', optional: true, extends_schema: true,
+          pick_list: 'models_dynamic_for_behavior', pick_list_params: { behavior: 'text.embed' }, toggle_hint: 'Select from list', 
           toggle_field: {  name: 'model', label: 'Model (custom id)', type: 'string', control_type: 'text', optional: true, toggle_hint: 'Provide custom value' } },
-        { name: 'lock_model_revision', label: 'Lock to latest numbered revision', control_type: 'checkbox', group: 'Model & tuning', ngIf: 'input.model_mode == "explicit"' },
+        { name: 'lock_model_revision', label: 'Lock to latest numbered revision', control_type: 'checkbox', group: 'Model & tuning'},
         { name: 'advanced_config', label: 'Show Advanced Configuration', control_type: 'checkbox', extends_schema: true, optional: true, default: false }
       ],
       # INPUT
@@ -775,15 +754,95 @@
         call('get_behavior_input_fields', 'text.embed', cfg['advanced_config'], cfg)
       end,
       # OUTPUT
-      # @note PATCH 10/01/25 routed output fields to get_behavior_output_fields
+      # @note PATCH 2025-10-01-A routed output fields to get_behavior_output_fields
       output_fields: lambda do |_obj_defs, _connection, _cfg|
         call('telemetry_envelope_fields') + call('get_behavior_output_fields', 'text.embed')
       end,
       # EXECUTE
       execute: lambda do |connection, input, _in_schema, _out_schema, config_fields|
-        user_cfg = call('extract_user_config', input, config_fields['advanced_config'], config_fields)
-        safe     = call('deep_copy', input)
-        call('execute_behavior', connection, 'text.embed', safe, user_cfg)
+        texts = Array(input['texts'])
+        return { 'success' => false, 'error' => 'No texts provided' } if texts.empty?
+        
+        model = input['model'] || config_fields['model'] || 'text-embedding-004'
+        
+        # Build payload
+        payload = {
+          'instances' => texts.map { |text| 
+            { 'content' => text, 'task_type' => input['task_type'] || 'RETRIEVAL_DOCUMENT' }
+          }
+        }
+        
+        # Build URL
+        project = connection['project']
+        region = connection['region']
+        version = connection['version'] || 'v1'
+        url = "https://#{region}-aiplatform.googleapis.com/#{version}/projects/#{project}/locations/#{region}/publishers/google/models/#{model}:predict"
+        
+        # Use call('http_request') which handles auth properly
+        response = call('http_request',
+          connection,
+          method: 'POST',
+          url: url,
+          payload: payload,
+          headers: call('build_headers', connection),
+          retry_config: { max_attempts: 2, backoff: 1.0 }
+        )
+        
+        # Extract embeddings from response
+        predictions = Array(response['predictions'])
+        
+        embeddings = predictions.map do |pred|
+          values = nil
+          
+          if pred.is_a?(Hash)
+            # Try different paths
+            if pred['embeddings'].is_a?(Hash) && pred['embeddings']['values']
+              values = pred['embeddings']['values']
+            elsif pred['embeddings'].is_a?(Array)
+              values = pred['embeddings']
+            elsif pred['values'].is_a?(Array)
+              values = pred['values']
+            end
+          elsif pred.is_a?(Array)
+            values = pred
+          end
+          
+          values ? { 'values' => Array(values).map(&:to_f) } : nil
+        end.compact
+        
+        # Build output
+        {
+          'success' => true,
+          'timestamp' => Time.now.utc.iso8601,
+          'metadata' => {
+            'operation' => 'text.embed',
+            'model' => model
+          },
+          'embeddings' => embeddings,
+          'vectors' => embeddings.map { |e| { 'feature_vector' => e['values'] } },
+          'count' => embeddings.length,
+          'dimension' => embeddings.first ? embeddings.first['values'].length : 0
+        }
+end,
+      #execute: lambda do |connection, input, _in_schema, _out_schema, config_fields|
+       # user_cfg = call('extract_user_config', input, config_fields['advanced_config'], config_fields)
+        #safe     = call('deep_copy', input)
+        #call('execute_behavior', connection, 'text.embed', safe, user_cfg)
+      #end,
+      # SAMPLE OUT
+      sample_output: lambda do |_connection, _cfg|
+        {
+          "success"   => true,
+          "timestamp" => "2025-01-01T00:00:00Z",
+          "metadata"  => { "operation" => "text.embed", "model" => "text-embedding-005@latest" },
+          "trace"     => { "correlation_id" => "abc123", "duration_ms" => 21, "attempt" => 1 },
+          "embeddings"=> [ { "values" => [0.01, 0.02, 0.03] } ],
+          "vectors"   => [ { "feature_vector" => [0.01, 0.02, 0.03] } ],
+          "count"     => 1,
+          "dimension" => 768,
+          "avg_norm"  => 1.0,
+          "norms"     => [1.0]
+        }
       end
     }
   },
@@ -816,8 +875,8 @@
         }.compact
 
         # Variables
-        # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
-        # @note PATCH 10/01/25-3 post-normalized safety settings 
+        # @note PATCH 2025-10-01-C using helper so that nil and empty arrays/hashes are treated as not present
+        # @note PATCH 2025-10-01-C post-normalized safety settings 
         sys = variables['system']
         payload['systemInstruction'] = { 'parts' => [{ 'text' => sys }] } if sys && !sys.to_s.strip.empty?
 
@@ -867,8 +926,8 @@
         }
 
         # Variables
-        # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
-        # @note PATCH 10/01/25-3 post-normalized safety settings 
+        # @note PATCH 2025-10-01-C using helper so that nil and empty arrays/hashes are treated as not present
+        # @note PATCH 2025-10-01-C post-normalized safety settings 
         if call('value_present', variables['system'])
           payload['systemInstruction'] = { 'parts' => [{ 'text' => variables['system'] }] }
         end
@@ -901,7 +960,7 @@
       # Embedding
       when 'embedding'
         texts = Array(variables['texts'])
-        # @note PATCH 10/01/25-1 enforced model constraint to fail appropriately
+        # @note PATCH 2025-10-01-A enforced model constraint to fail appropriately
         if variables['model'].to_s == 'gemini-embedding-001' && texts.length > 1
           corr = "#{Time.now.utc.to_i}-#{SecureRandom.hex(6)}"
           error("gemini-embedding-001 supports one text per request. Received #{texts.length}. Split into multiple calls or use Batch. [corr_id=#{corr}]")
@@ -916,7 +975,7 @@
             }.compact
           }
         }
-        # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
+        # @note PATCH 2025-10-01-C using helper so that nil and empty arrays/hashes are treated as not present
         params = {}
         if call('value_present', variables['auto_truncate'])
           params['autoTruncate'] = variables['auto_truncate']
@@ -933,26 +992,27 @@
         queries = Array(variables['queries']).map do |q|
           dp =
             if q['feature_vector']
-              { 'feature_vector' => Array(q['feature_vector']).map(&:to_f) }
+              { 'featureVector' => Array(q['feature_vector']).map(&:to_f) }
             elsif q['vector'] # alias
-              { 'feature_vector' => Array(q['vector']).map(&:to_f) }
+              { 'featureVector' => Array(q['vector']).map(&:to_f) }
             elsif q['datapoint_id']
-              { 'datapoint_id' => q['datapoint_id'] }
+              { 'datapointId' => q['datapoint_id'] }
             else
               {}
             end
+
           {
-            'datapoint'        => dp,
-            'neighbor_count'   => (q['neighbor_count'] || variables['neighbor_count'] || 10).to_i,
-            'restricts'        => q['restricts'],
-            'numeric_restricts'=> q['numeric_restricts']
+            'datapoint'         => dp,
+            'neighborCount'     => (q['neighbor_count'] || variables['neighbor_count'] || 10).to_i,
+            'restricts'         => q['restricts'],
+            'numericRestricts'  => q['numeric_restricts'] # keep input snake_case; map to camel here
           }.compact
         end
 
         {
-          'deployed_index_id'     => variables['deployed_index_id'],
-          'queries'               => queries,
-          'return_full_datapoint' => variables['return_full_datapoint']
+          'deployedIndexId'     => variables['deployed_index_id'],
+          'queries'             => queries,
+          'returnFullDatapoint' => variables['return_full_datapoint']
         }.compact
 
       when 'upsert_datapoints'
@@ -978,7 +1038,7 @@
         { 'datapoints' => datapoints }
       when 'read_index_datapoints'
         ids = call('extract_ids_for_read', variables)
-        { 'deployed_index_id' => variables['deployed_index_id'], 'ids' => ids }
+        { 'deployedIndexId' => variables['deployed_index_id'], 'ids' => ids }
       # Multimodal
       when 'multimodal'
         parts = []
@@ -1005,7 +1065,7 @@
     end,
     
     # --- Response Enrichment
-    # @note PATCH 10/01/25-4 expose http trace for debugging purposes
+    # @note PATCH 2025-10-01-D expose http trace for debugging purposes
     enrich_response: lambda do |response:, metadata: {}|
       base  = response.is_a?(Hash) ? JSON.parse(JSON.dump(response)) : { 'result' => response }
       trace = base.delete('_trace') || (base['result'].is_a?(Hash) ? base['result'].delete('_trace') : nil)
@@ -1052,11 +1112,66 @@
         return {} if raw.nil? || raw.empty?
         m = raw.match(/```(?:json)?\s*(\{.*?\})\s*```/m) || raw.match(/\{.*\}/m)
         m ? (JSON.parse(m[1] || m[0]) rescue {}) : {}
-      # Embeddings
       when 'embeddings'
-        # text-embedding APIs return embeddings under predictions[].embeddings.values
-        arr = (data['predictions'] || []).map { |p| p.dig('embeddings', 'values') || p['values'] }.compact
-        arr
+        call('debug_embedding_response', data) if defined?(ENV) # debug
+        # Support all observed Vertex shapes
+        preds = Array(data['predictions'])
+        
+        vectors = preds.map do |p|
+          if p.is_a?(Array)
+            # Direct array of values
+            p
+          elsif p.is_a?(Hash)
+            # Try multiple paths to find the embedding values
+            v = nil
+            
+            # Check for nested embeddings structure
+            if p['embeddings']
+              if p['embeddings'].is_a?(Array)
+                v = p['embeddings']
+              elsif p['embeddings'].is_a?(Hash) && p['embeddings']['values']
+                v = p['embeddings']['values']
+              elsif p['embeddings'].is_a?(Hash) && p['embeddings']['statistics']
+                # Some models return statistics wrapper
+                v = p['embeddings']['statistics']['values'] || p['embeddings']['statistics']['embedding']
+              end
+            end
+            
+            # Fallback to other possible paths
+            v ||= p.dig('embedding', 'values') ||
+                  (p['embedding'] if p['embedding'].is_a?(Array)) ||
+                  p['denseEmbedding'] ||
+                  p['values']
+            
+            # Ensure we have an array
+            v = Array(v) if v && !v.is_a?(Array)
+            v
+          end
+        end.reject { |v| v.nil? || v.empty? }  # Changed from .compact to be more explicit
+        
+        # Return empty array if no valid vectors found
+        vectors.empty? ? [] : vectors
+      # Embeddings
+      when 'formerly-embeddings'
+        # Support all observed Vertex shapes:
+        #  1) predictions[].embeddings.values     (object -> values)
+        #  2) predictions[].embeddings            (array directly)
+        #  3) predictions[].embedding             (singular, array)
+        preds = Array(data['predictions'])
+        vectors = preds.map do |p|
+          if p.is_a?(Array)
+            p
+          elsif p.is_a?(Hash)
+            v = p.dig('embeddings', 'values') ||
+                (p['embeddings'] if p['embeddings'].is_a?(Array)) ||
+                p.dig('embedding', 'values') ||
+                (p['embedding'] if p['embedding'].is_a?(Array)) ||
+                p['denseEmbedding'] ||
+                p['values']
+            v
+          end
+        end.compact
+        vectors
       else data
       end
     end,
@@ -1161,12 +1276,18 @@
         # Use centralized http_request for retries and telemetry
         resp = call('http_request', connection, method: 'GET', url: input, headers: {})
         raw  = resp['raw'] || resp.to_s
-        raw.to_s.encode_base64
+        require 'base64'
+        Base64.strict_encode64(raw.to_s)
       when 'base64_to_bytes'
-        input.decode_base64
+        require 'base64'
+        Base64.decode64(input.to_s)
       when 'language_code_to_name'
-        languages = { 'en' => 'English', 'es' => 'Spanish', 'fr' => 'French' }
-        languages[input] || input
+        names = {
+          'en'=>'English','es'=>'Spanish','fr'=>'French','de'=>'German','it'=>'Italian','pt'=>'Portuguese',
+          'ja'=>'Japanese','ko'=>'Korean','zh-CN'=>'Chinese (Simplified)','zh-TW'=>'Chinese (Traditional)'
+        }
+        return 'auto-detected' if input == 'auto'
+        names[input] || input
       when 'categories_to_text'
         input.map { |c| "#{c['name']}: #{c['description']}" }.join("\n")
       when 'distance_to_similarity'
@@ -1186,7 +1307,7 @@
         field_value = data[field_name]
         
         # Required check
-        # @note PATCH 10/01/25-3 updated to treat [] {} as missing for required fields
+        # @note PATCH 2025-10-01-C updated to treat [] {} as missing for required fields
         if field['required'] && !call('value_present', field_value)
           errors << "#{field_name} is required"
         end
@@ -1339,6 +1460,11 @@
 
     # ------ LAYER 2: UNIVERSAL PIPELINE -----------------------
     execute_pipeline: lambda do |connection, operation, input, config|
+      # PATCH 2025-10-02-A
+      # Recursion guard
+      @pipeline_depth ||= 0
+      @pipeline_depth += 1
+      error("Pipeline recursion detected!") if @pipeline_depth > 3
       # Don't mutate the input
       local = call('deep_copy', input)
 
@@ -1366,7 +1492,7 @@
       end
 
       # -- Ensure selected model from ops config is visible to URL builder
-      # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
+      # @note PATCH 2025-10-01-C using helper so that nil and empty arrays/hashes are treated as not present
       local['model'] = config['model'] unless call('value_present', local['model'])
 
       # 3. Build payload
@@ -1410,16 +1536,27 @@
         response
       end
       
+      # 6.5 Attach trace ASAP so post_process can preserve/propagate it
+      if trace_from_response
+        if extracted.is_a?(Hash)
+          extracted['_trace'] ||= {}
+          extracted['_trace'].merge!(trace_from_response)
+        else
+          extracted = { 'result' => extracted, '_trace' => trace_from_response }
+        end
+      end
+
       # 7. Post-process
       if config['post_process']
         extracted = call(config['post_process'], extracted, local)
       end
 
-      # Preserve trace even if extracted is a primitive
+      # 7.5 Ensure trace still present after post_process (if function dropped it)
       if trace_from_response
         if extracted.is_a?(Hash)
           extracted['_trace'] ||= {}
-          extracted['_trace'].merge!(trace_from_response)
+          # Preserve any trace the post-processor may have added; don't overwrite it
+          extracted['_trace'].merge!(trace_from_response) { |_k, old, _new| old }
         else
           extracted = { 'result' => extracted, '_trace' => trace_from_response }
         end
@@ -1560,10 +1697,11 @@
           capability: 'embedding',
           supported_models: ['text-embedding-005', 'text-embedding-004', 'textembedding-gecko', 'gemini-embedding-001'],
           features: ['batching', 'caching'],
+          # @note PATCH 2025-10-01-D aligned constraints.max_items.value with that of API
           config_template: {
             'validate' => {
               'schema' => [ { 'name' => 'texts', 'required' => true } ],
-              'constraints' => [ { 'type' => 'max_items', 'field' => 'texts', 'value' => 100 } ]
+              'constraints' => [ { 'type' => 'max_items', 'field' => 'texts', 'value' => 250 } ]
             },
             'payload' => { 'format' => 'embedding' },
             'endpoint' => { 'path' => ':predict', 'method' => 'POST' },
@@ -1735,7 +1873,7 @@
     end,
     
     # --- Main execution method combining all layers
-    execute_behavior: lambda do |connection, behavior, input, user_config = {}|
+    execute_behavior_old: lambda do |connection, behavior, input, user_config = {}|
       behavior_def = call('behavior_registry')[behavior] or error("Unknown behavior: #{behavior}")
       local_input = call('deep_copy', input) # Work on a local copy only
 
@@ -1761,15 +1899,15 @@
 
       operation_config['model'] = call('select_model', behavior_def, cfg, local_input)
 
-      # @note PATCH 10/01/25-2 add breadcrumb to troubleshoot model selection
+      # @note PATCH 2025-10-01-B add breadcrumb to troubleshoot model selection
       selection_mode = (local_input['model_mode'] || cfg.dig(:models, :mode) || 'auto').to_s
       strategy       = (cfg.dig(:models, :strategy) || 'balanced').to_s
       explicit_in    = user_config['model']
 
 
-      # @note PATCH 10/01/25-1 forcing sane fallback rather than issuing a bad :predict call
+      # @note PATCH 2025-10-01-A forcing sane fallback rather than issuing a bad :predict call
       if behavior_def[:supported_models].any? && !behavior_def[:supported_models].include?(operation_config['model'])
-        # @note PATCH 10/01/25-3 Re-select while ignoring any explicit/override model that may have been carried along
+        # @note PATCH 2025-10-01-C Re-select while ignoring any explicit/override model that may have been carried along
         scrubbed = call('deep_copy', local_input)
         scrubbed.delete('model')
         scrubbed.delete('model_override')
@@ -1805,7 +1943,7 @@
 
       result = call('execute_pipeline', connection, behavior, local_input, operation_config)
 
-      # @note PATCH 10/01/25-2 enforce breadcrumbs
+      # @note PATCH 2025-10-01-B enforce breadcrumbs
       if result.is_a?(Hash) && result['trace'].is_a?(Hash)
         result['trace']['model_selection'] = {
           'mode'            => selection_mode,        # auto / explicit / connection
@@ -1822,8 +1960,119 @@
       result
     end,
 
+    execute_behavior: lambda do |connection, behavior, input, user_config = {}|
+      behavior_def = call('behavior_registry')[behavior] or error("Unknown behavior: #{behavior}")
+      local_input = call('deep_copy', input)
+
+      # Apply defaults without side effects
+      if behavior_def[:defaults]
+        behavior_def[:defaults].each { |k, v| local_input[k] = local_input.key?(k) ? local_input[k] : v }
+      end
+
+      # Bring model-selection keys into local_input
+      %w[model model_mode lock_model_revision].each do |k|
+        if user_config.key?(k) && !user_config[k].nil?
+          local_input[k] = user_config[k]
+        end
+      end
+
+      cfg = call('configuration_registry', connection, user_config)
+      operation_config = JSON.parse(JSON.dump(behavior_def[:config_template] || {}))
+
+      # Bring generation settings into the local input
+      if cfg[:generation]
+        cfg[:generation].each { |k, v| local_input[k] = v unless v.nil? }
+      end
+
+      operation_config['model'] = call('select_model', behavior_def, cfg, local_input)
+
+      # Force correct model if needed
+      if behavior_def[:supported_models].any? && !behavior_def[:supported_models].include?(operation_config['model'])
+        scrubbed = call('deep_copy', local_input)
+        scrubbed.delete('model')
+        scrubbed.delete('model_override')
+        operation_config['model'] = call('select_model', behavior_def, cfg, scrubbed.merge('model_mode' => 'auto'))
+      end
+
+      operation_config['resilience'] = cfg[:execution]
+
+      # CRITICAL DEBUG: For embeddings, let's trace the actual pipeline execution
+      if behavior == 'text.embed'
+        # Log what we're about to execute
+        debug_info = {
+          'input_texts' => local_input['texts'],
+          'model' => operation_config['model'],
+          'config' => operation_config
+        }
+        
+        # Execute pipeline WITH debugging
+        result = call('execute_pipeline', connection, behavior, local_input, operation_config)
+        
+        # Check if result has actual data
+        debug_result = {
+          'pipeline_result' => result,
+          'has_result' => !result.nil?,
+          'result_keys' => result.is_a?(Hash) ? result.keys : nil,
+          'result_class' => result.class.name
+        }
+        
+        # Return debug info along with result
+        if result.is_a?(Hash) && !result['DEBUG_INFO']
+          result['DEBUG_INFO'] = {
+            'input' => debug_info,
+            'output' => debug_result
+          }
+        end
+        
+        return result
+      else
+        # Normal execution for non-embedding behaviors
+        result = call('execute_pipeline', connection, behavior, local_input, operation_config)
+      end
+
+      # Add model selection trace
+      selection_mode = (local_input['model_mode'] || cfg.dig(:models, :mode) || 'auto').to_s
+      strategy = (cfg.dig(:models, :strategy) || 'balanced').to_s
+      explicit_in = user_config['model']
+
+      if result.is_a?(Hash) && result['trace'].is_a?(Hash)
+        result['trace']['model_selection'] = {
+          'mode' => selection_mode,
+          'strategy' => strategy,
+          'explicit_model' => explicit_in,
+          'effective_model' => operation_config['model']
+        }.compact
+      end
+
+      # Cache if enabled
+      if cfg[:features][:caching][:enabled]
+        cache_key = "vertex_#{behavior}_#{local_input.to_json.hash}"
+        call('memo_put', cache_key, result, cfg[:features][:caching][:ttl] || 300)
+      end
+
+      result
+    end,
 
     # ------ HELPER METHODS ------------------------------------
+    # testing
+    debug_embedding_response: lambda do |data|
+      return unless ENV['VERTEX_DEBUG'] == 'true'  # Only log when debugging enabled
+      
+      if data && data['predictions']
+        pred = data['predictions'].first
+        structure = if pred.is_a?(Hash)
+          pred.keys.join(', ')
+        else
+          pred.class.name
+        end
+        puts "DEBUG: Embedding response structure - predictions[0] keys: #{structure}"
+        
+        if pred.is_a?(Hash) && pred['embeddings']
+          emb_structure = pred['embeddings'].is_a?(Hash) ? pred['embeddings'].keys.join(', ') : pred['embeddings'].class.name
+          puts "DEBUG: embeddings structure: #{emb_structure}"
+        end
+      end
+    end,
     # Post-processing methods
     add_upsert_ack: lambda do |response, input|
       # response is empty on success; return a useful ack
@@ -1923,7 +2172,7 @@
         base_host = (region == 'global') ? 'aiplatform.googleapis.com' : "#{region}-aiplatform.googleapis.com"
         base_url  = "https://#{base_host}/#{api_version}"
 
-        # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
+        # @note PATCH 2025-10-01-C using helper so that nil and empty arrays/hashes are treated as not present
         model = call('value_present', input['model']) ? input['model'] : (connection['default_model'] || 'gemini-1.5-flash')
         model_id = model.to_s
 
@@ -1951,7 +2200,7 @@
       end
     end,
     
-    # @note PATCH 10/01/25-3 modified to default only when inputs are actually absent
+    # @note PATCH 2025-10-01-C modified to default only when inputs are actually absent
     build_generation_config: lambda do |vars|
       {
         'temperature'     => call('value_present', vars['temperature']) ? vars['temperature'] : 0.7,
@@ -2223,7 +2472,7 @@
       # Prefer config_fields values; fall back to input (back-compat)
       mode = (config_ctx['model_mode'] || input['model_mode'] || '').to_s
       #explicit_model = config_ctx['model'] || input['model'] || input['model_override']
-      # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
+      # @note PATCH 2025-10-01-C using helper so that nil and empty arrays/hashes are treated as not present
       explicit_model = call('value_present', input['model']) ? input['model'] : config_ctx['model'] || input['model_override']
 
       case mode
@@ -2473,20 +2722,17 @@
       when 'text.embed'
         fields = [
           { name: 'texts', label: 'Texts to Embed', type: 'array', of: 'string', optional: false },
+          { name: 'task_type', label: 'Task Type', control_type: 'select', pick_list: 'embedding_tasks',  optional: true, hint: 'Helps the model optimize embeddings for your use case.' },
+          { name: 'title', label: 'Title (for documents)', optional: true, hint: 'Used only with task_type = RETRIEVAL_DOCUMENT.' }
         ]
-        if include_model
-          fields << {
-            name: 'model', label: 'Model', group: 'Model & tuning', control_type: 'select', optional: true, sticky: true,
-            pick_list: 'models_dynamic_for_behavior', pick_list_params: { behavior: behavior }, toggle_hint: 'Select from list',
-            toggle_field: { name: 'model', label: 'Model (custom id)', type: 'string', control_type: 'text', optional: true, toggle_hint: 'Provide custom value' }
-          }
-          fields << {
-            name: 'lock_model_revision', label: 'Lock to latest numbered revision',
-            control_type: 'checkbox', group: 'Model & tuning',
-            hint: 'Resolves alias (e.g., gemini-1.5-pro) to current highest revision at runtime.'
-          }
-        end
+        # Advanced embedding controls
         if show_advanced
+          fields += [
+            { name: 'output_dimensionality', label: 'Output dimensionality', type: 'integer', group: 'Advanced',
+              hint: 'Truncate embedding size to this dimension (e.g., 256/512/768/3072 depending on model).' },
+            { name: 'auto_truncate', label: 'Auto truncate long inputs', control_type: 'checkbox', default: true, group: 'Advanced',
+              hint: 'Set false to error on over-limit inputs instead of silent truncation.' }
+          ]
           fields += [
             { name: 'system', label: 'System instruction', control_type: 'text-area', optional: true, group: 'Advanced', hint: 'Optional system prompt to guide the model' },
             { name: 'safety_settings', label: 'Safety settings', type: 'array', of: 'object', group: 'Advanced',
@@ -2496,8 +2742,8 @@
                 { name: 'method',    control_type: 'select', pick_list: 'safety_methods',     optional: true }
               ]}
           ]
-        end
-        fields
+         end
+         fields
       when 'vector.upsert_datapoints'
         fields = [
           # Target
@@ -2584,8 +2830,6 @@
           fields << { name: 'neighbors', label: 'k‑NN neighbors (flattened)',
                       optional: true, group: 'Map from Find neighbors',
                       type: 'array', of: 'object', properties: [{ name: 'datapoint_id' }] }
-          fields << { name: 'unique', label: 'Deduplicate IDs',
-                      control_type: 'checkbox', default: true, group: 'Map from Find neighbors' }
         }
         add_groups = lambda {
           fields << { name: 'groups', label: 'k‑NN groups (from Find neighbors)',
@@ -2593,8 +2837,6 @@
                       type: 'array', of: 'object', properties: [
                         { name: 'neighbors', type: 'array', of: 'object', properties: [{ name: 'datapoint_id' }] }
                       ] }
-          fields << { name: 'unique', label: 'Deduplicate IDs',
-                      control_type: 'checkbox', default: true, group: 'Map from Find neighbors' }
         }
         case mode
         when 'manual'    then add_manual.call
@@ -2604,6 +2846,11 @@
           add_manual.call
           add_neighbors.call
           add_groups.call
+        end
+        # Add a single dedupe toggle when sources are from neighbors/groups/auto
+        unless mode == 'manual'
+          fields << { name: 'unique', label: 'Deduplicate IDs',
+                      control_type: 'checkbox', default: true, group: 'Map from Find neighbors' }
         end
 
         fields
@@ -2667,8 +2914,7 @@
         [{ name: 'result', label: 'Generated Text' }]
       when 'text.translate'
         [
-          { name: 'result', label: 'Translated Text' },
-          { name: 'detected_language', label: 'Detected Source Language' }
+          { name: 'result', label: 'Translated Text' }
         ]
       when 'text.summarize'
         [
@@ -2685,8 +2931,8 @@
         [
           { name: 'embeddings', type: 'array', of: 'object', properties: [
             { name: 'values', label: 'Values', type: 'array', of: 'number'}]},
-          # @note PATCH 10/01/25-1, added properties to ensure output is emitted as expected
-          # @note PATCH 10/01/25-2, removed erroneous trailing space in scalar type 
+          # @note PATCH 2025-10-01-A, added properties to ensure output is emitted as expected
+          # @note PATCH 2025-10-01-B, removed erroneous trailing space in scalar type 
           { name: 'vectors', type: 'array', of: 'object', properties: [ 
             { name: 'feature_vector', type: 'array', of: 'number' } ]},
           { name: 'count', type: 'integer' },
@@ -2951,7 +3197,7 @@
     end,
 
     # Resolve an alias to the latest version available
-    # @note PATCH 10/01/25-2 hardened to guard for gecko model version style
+    # @note PATCH 2025-10-01-B hardened to guard for gecko model version style
     resolve_model_version: lambda do |connection, short|
       return short if short.to_s.match?(/(-\d{3,}|@\d{3,})$/)
 
@@ -2982,7 +3228,7 @@
     # Model selection logic
     select_model: lambda do |behavior_def, cfg, input|
       # 0) Respect explicit model in input
-      # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
+      # @note PATCH 2025-10-01-C using helper so that nil and empty arrays/hashes are treated as not present
       if call('value_present', input['model']) || call('value_present', input['model_override'])
         return call('value_present', input['model']) ? input['model'] : input['model_override']
       end
@@ -3101,8 +3347,8 @@
     end,
 
     # Wrap raw embedding arrays with an upsert-friendly shape, preserve trace
-    # @note PATCH 10/01/25-1 updated to emit prooper shapes from calling fx
-    wrap_embeddings_vectors: lambda do |response, input|
+    # @note PATCH 2025-10-01-A updated to emit prooper shapes from calling fx
+    wrap_embeddings_vectors_v1: lambda do |response, input|
       raw = if response.is_a?(Hash) && response.key?('result')
         response['result']
       else
@@ -3124,6 +3370,69 @@
 
       out['_trace'] = response['_trace'] if response.is_a?(Hash) && response['_trace']
       out
+    end,
+
+    # @note PATCH 2025-10-02-A testing
+    wrap_embeddings_vectors: lambda do |response, input|
+      # Extract raw embeddings from response
+      raw = if response.is_a?(Hash) && response.key?('result')
+        response['result']
+      else
+        response
+      end
+      
+      # Ensure we have an array of embeddings
+      embeddings_array = []
+      
+      if raw.nil? || (raw.is_a?(Array) && raw.empty?)
+        # Return empty structure if no embeddings
+        return {
+          'embeddings' => [],
+          'vectors'    => [],
+          'count'      => 0,
+          'dimension'  => 0,
+          'norms'      => [],
+          'avg_norm'   => 0
+        }.merge(response.is_a?(Hash) && response['_trace'] ? { '_trace' => response['_trace'] } : {})
+      end
+      
+      # Normalize to array of arrays
+      if raw.is_a?(Array)
+        if raw.first.is_a?(Numeric)
+          # Single embedding as flat array
+          embeddings_array = [raw]
+        else
+          # Multiple embeddings
+          embeddings_array = raw
+        end
+      else
+        # Unexpected format - wrap in array
+        embeddings_array = [Array(raw)]
+      end
+      
+      # Convert to floats and calculate norms
+      arr = embeddings_array.map { |v| 
+        Array(v).map { |x| x.to_f rescue 0.0 }  # Safe conversion with fallback
+      }.reject { |v| v.empty? }
+      
+      norms = arr.map { |v| 
+        Math.sqrt(v.reduce(0.0) { |s, x| s + (x * x) })
+      }
+      
+      dim = arr.first ? arr.first.length : 0
+      
+      out = {
+        'embeddings' => arr.map { |v| { 'values' => v } },
+        'vectors'    => arr.map { |v| { 'feature_vector' => v } },
+        'count'      => arr.length,
+        'dimension'  => dim,
+        'norms'      => norms,
+        'avg_norm'   => call('safe_mean', norms) || 0
+      }
+      
+      # Preserve trace if present
+      out['_trace'] = response['_trace'] if response.is_a?(Hash) && response['_trace']
+      out
     end
 
   },
@@ -3143,14 +3452,12 @@
         ['Text Embedding Gecko', 'textembedding-gecko']
       ]
     end,
-    
     available_behaviors: lambda do |connection|
       behaviors = call('behavior_registry')
       behaviors.map do |key, config|
         [config[:description], key]
       end.sort_by { |label, _| label }
     end,
-    
     batchable_behaviors: lambda do |connection|
       behaviors = call('behavior_registry')
       behaviors.select { |_, config| 
@@ -3159,14 +3466,17 @@
         [config[:description], key]
       }
     end,
-    
-    embedding_tasks: lambda do |connection|
+    # @note PATCH 2025-10-01-D completed embedding task types
+    embedding_tasks: lambda do |_connection|
       [
         ['Document Retrieval', 'RETRIEVAL_DOCUMENT'],
         ['Query Retrieval', 'RETRIEVAL_QUERY'],
         ['Semantic Similarity', 'SEMANTIC_SIMILARITY'],
         ['Classification', 'CLASSIFICATION'],
-        ['Clustering', 'CLUSTERING']
+        ['Clustering', 'CLUSTERING'],
+        ['Question Answering (query side)', 'QUESTION_ANSWERING'],
+        ['Fact Verification (query side)',  'FACT_VERIFICATION'],
+        ['Code Retrieval (Java/Python)',    'CODE_RETRIEVAL_QUERY']
       ]
     end,
 
@@ -3209,8 +3519,9 @@
       end
     end,
 
-    # @note PATCH 10/01/25-1 exposed gemini-embedding-* in dynamic pick list when behavior is embeddings
-    models_dynamic_for_behavior: lambda do |connection, behavior: nil, **_|
+    # @note PATCH 2025-10-01-A exposed gemini-embedding-* in dynamic pick list when behavior is embeddings
+    models_dynamic_for_behavior: lambda do |connection, input = {}|
+      behavior = input['behavior']
       prefixes = if behavior.to_s == 'text.embed'
         ['text-embedding-', 'textembedding-', 'gemini-embedding-']
       else
@@ -3229,12 +3540,12 @@
       if items.empty?
         # Minimal, safe fallback to keep the UI usable before a connection is fully ready.
         items = if prefixes.first == 'gemini-'
-          [['Gemini 2.5 Flash', 'gemini-2.5-flash'], ['Gemini 2.5 Pro', 'gemini-2.5-pro']]
+          [['Gemini 1.5 Flash', 'gemini-1.5-flash'], ['Gemini 1.5 Pro', 'gemini-1.5-pro']]
         else
           [
-            ['Gemini Embedding 001',   'gemini-embedding-001'],
             ['Text Embedding 005',     'text-embedding-005'],
             ['Text Embedding 004',     'text-embedding-004'],
+            ['Gemini Embedding 001',   'gemini-embedding-001'],
             ['Text Embedding Gecko',   'textembedding-gecko']
           ]
         end
@@ -3303,7 +3614,7 @@
           { name: 'temperature', type: 'number', hint: 'Controls randomness (0-1)', group: 'Generation options' },
           { name: 'max_tokens', type: 'integer', hint: 'Maximum response length', group: 'Generation options' },
           { name: 'top_p', type: 'number', hint: 'Nucleus sampling', group: 'Generation options' },
-          { name: 'top_k', type: 'integer', hint: 'Top-k sampling' , group: 'Generation options,' },
+          { name: 'top_k', type: 'integer', hint: 'Top-k sampling' , group: 'Generation options' },
           { name: 'stop_sequences', type: 'array', of: 'string', hint: 'Stop generation at these sequences', group: 'Generation options' }
         ]
       end
