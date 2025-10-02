@@ -8,13 +8,14 @@ GEM
     racc (1.8.1)
 
 PLATFORMS
+  ruby
   x86_64-linux
 
 DEPENDENCIES
   parser (~> 3.3)
 
 RUBY VERSION
-   ruby 3.2.9p265
+   ruby 3.2.8p263
 
 BUNDLED WITH
-   2.4.19
+   2.7.2
