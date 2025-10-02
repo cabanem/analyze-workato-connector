@@ -1,9 +1,6 @@
 {
   "name": "Workato Connector Inspector",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
-
+  "build": { "dockerfile": "Dockerfile" },
   "remoteUser": "vscode",
 
   "customizations": {
@@ -17,10 +14,7 @@
       "settings": {
         "files.insertFinalNewline": true,
         "rubyLsp.enabled": true,
-        "rubyLsp.enabledFeatures": {
-          "formatting": true,
-          "diagnostics": true
-        },
+        "rubyLsp.enabledFeatures": { "formatting": true, "diagnostics": true },
         "editor.formatOnSave": true,
         "editor.fontSize": 14,
         "editor.fontFamily": "'Cascadia Code', 'Courier New', monospace",
