@@ -1,10 +1,10 @@
 {
   title: 'Vertex AI',
-  version: '0.7.0',
+  version: '0.7.4',
   
-  # ============================================
+  # ============================================================
   # CONNECTION & AUTHENTICATION
-  # ============================================
+  # ============================================================
   connection: {
     fields: [
       # Authentication type
@@ -241,16 +241,15 @@
     error(e.message)
   end,
 
-  # ============================================
+  # ============================================================
   # ACTIONS
-  # ============================================
+  # ============================================================
   # Listed alphabetically within each subsection.
   actions: {
 
-    # ------------------------------------------
-    # CORE
-    # ------------------------------------------
-    # Batch Operation Action
+    #
+    # ------ UNIVERSAL ACTIONS ----------------------------------
+    # Batch Operation
     batch_operation: {
       title: 'UNIVERSAL - Batch AI Operation',
       # CONFIG
@@ -352,7 +351,7 @@
         end
       end
     },
-    # Universal Action
+    # Vertex Operation
     vertex_operation: {
       title: 'UNIVERSAL - Vertex AI Operation',
       # CONFIG
@@ -455,10 +454,8 @@
       end
     },
 
-    # ------------------------------------------
-    # THIN WRAPPERS
-    # ------------------------------------------
-    # Index disovery
+    # ------ THIN WRAPPERS --------------------------------------
+    # --- Index discovery
     discover_index_config: {
       title: 'VECTOR SEARCH - Discover index configuration',
       description: 'Reads IndexEndpoint and Index to determine distance metrics and feature normalization',
@@ -498,7 +495,7 @@
         }
       end
     },
-    # Text
+    # --- Text
     classify_text: {
       title: 'AI - Classify Text',
       description: 'Classify text into one of the provided categories',
@@ -676,7 +673,7 @@
         }
       end
     },
-    # Vector search
+    # --- Vector search
     find_neighbors: {
       title: 'VECTOR SEARCH - Find nearest neighbors',
       description: 'Query a deployed Vector Search index',
@@ -753,7 +750,7 @@
         call('execute_behavior', connection, 'vector.upsert_datapoints', call('deep_copy', input))
       end
     },
-    # Embeddings
+    # --- Embeddings
     generate_embeddings: {
       title: 'VECTOR SEARCH - Generate embeddings',
       description: 'Create dense embeddings for text',
@@ -764,20 +761,11 @@
             ['Auto (use connection strategy)', 'auto'],
             ['Explicit (choose model below)', 'explicit'],
             ['Use connection default',        'connection'] ],
-          sticky: true, extends_schema: true, # forces input_fields to re-render when changed
-          hint: 'Switch to Explicit to pick an exact Vertex model for this step.'
-        },
-        { name: 'model',
-          label: 'Model',
-          group: 'Model & tuning',
-          control_type: 'select',
-          sticky: true,
-          optional: true,
-          extends_schema: true,
-          ngIf: 'input.model_mode == "explicit"',
-          pick_list: 'models_dynamic_for_behavior',
-          toggle_hint: 'Select from list',
-          toggle_field: { name: 'model', label: 'Model (custom id)', type: 'string', control_type: 'text', optional: true, toggle_hint: 'Provide custom value' } },
+          hint: 'Switch to Explicit to pick an exact Vertex model for this step.', sticky: true, extends_schema: true },
+        # @note PATCH 10/01/25-2 added picklist params for picklist
+        { name: 'model', label: 'Model', group: 'Model & tuning', control_type: 'select', sticky: true, optional: true, extends_schema: true,
+          ngIf: 'input.model_mode == "explicit"', pick_list: 'models_dynamic_for_behavior', pick_list_params: { behavior: 'text.embed' }, toggle_hint: 'Select from list', 
+          toggle_field: {  name: 'model', label: 'Model (custom id)', type: 'string', control_type: 'text', optional: true, toggle_hint: 'Provide custom value' } },
         { name: 'lock_model_revision', label: 'Lock to latest numbered revision', control_type: 'checkbox', group: 'Model & tuning', ngIf: 'input.model_mode == "explicit"' },
         { name: 'advanced_config', label: 'Show Advanced Configuration', control_type: 'checkbox', extends_schema: true, optional: true, default: false }
       ],
@@ -787,14 +775,9 @@
         call('get_behavior_input_fields', 'text.embed', cfg['advanced_config'], cfg)
       end,
       # OUTPUT
+      # @note PATCH 10/01/25 routed output fields to get_behavior_output_fields
       output_fields: lambda do |_obj_defs, _connection, _cfg|
-        call('telemetry_envelope_fields') + [
-          { name: 'embeddings', type: 'array', of: 'array' },
-          { name: 'vectors', type: 'array', of: 'object', properties: [
-            { name: 'feature_vector', type: 'array', of: 'number' }
-          ]},
-          { name: 'count', type: 'integer' }
-        ]
+        call('telemetry_envelope_fields') + call('get_behavior_output_fields', 'text.embed')
       end,
       # EXECUTE
       execute: lambda do |connection, input, _in_schema, _out_schema, config_fields|
@@ -805,28 +788,23 @@
     }
   },
 
-  # ============================================
-  # METHODS - LAYERED ARCHITECTURE
-  # ============================================
+  # ============================================================
+  # METHODS
+  # ============================================================
   methods: {
-    # ============================================
-    # LAYER 1: CORE METHODS (Foundation)
-    # ============================================
-    
-    # Payload Building
+    # ------ LAYER 1: CORE METHODS (Foundation) ----------------
+    # --- Payload Building
     build_payload: lambda do |template:, variables:, format:|
       case format
       
       # Direct
       when 'direct'
         variables
-      
       # Template
       when 'template'
         result = template.dup
         variables.each { |k, v| result = result.gsub("{#{k}}", v.to_s) }
         result
-      
       # Vertex prompt
       when 'vertex_prompt'
         payload = {
@@ -837,21 +815,22 @@
           'generationConfig' => call('build_generation_config', variables)
         }.compact
 
+        # Variables
+        # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
+        # @note PATCH 10/01/25-3 post-normalized safety settings 
         sys = variables['system']
         payload['systemInstruction'] = { 'parts' => [{ 'text' => sys }] } if sys && !sys.to_s.strip.empty?
 
-        if variables['safety_settings']
-          payload['safetySettings'] = call('normalize_safety_settings', variables['safety_settings'])
-        end
+        norm = call('normalize_safety_settings', variables['safety_settings'])
+        payload['safetySettings'] = norm unless norm.nil? || (norm.respond_to?(:empty?) && norm.empty?)
 
-        # JSON mode (optional)
-        if variables['response_mime_type'] || variables['response_schema']
+        if call('value_present', variables['response_mime_type']) || call('value_present', variables['response_schema'])
           gc = (payload['generationConfig'] ||= {})
-          gc['responseMimeType'] = variables['response_mime_type'] if variables['response_mime_type']
-          gc['responseSchema']   = variables['response_schema']     if variables['response_schema']
+          gc['responseMimeType'] = variables['response_mime_type'] if call('value_present', variables['response_mime_type'])
+          gc['responseSchema']   = variables['response_schema']     if call('value_present', variables['response_schema'])
         end
 
-        payload['labels'] = variables['labels'] if variables['labels']
+        payload['labels'] = variables['labels'] if call('value_present', variables['labels'])
         payload
 
       when 'vertex_contents'
@@ -887,19 +866,21 @@
           'generationConfig' => call('build_generation_config', variables)
         }
 
-        if variables['system']
+        # Variables
+        # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
+        # @note PATCH 10/01/25-3 post-normalized safety settings 
+        if call('value_present', variables['system'])
           payload['systemInstruction'] = { 'parts' => [{ 'text' => variables['system'] }] }
         end
-        if variables['safety_settings']
-          payload['safetySettings'] = call('normalize_safety_settings', variables['safety_settings'])
-        end
 
-        # JSON mode (optional)
+        norm = call('normalize_safety_settings', variables['safety_settings'])
+        payload['safetySettings'] = norm unless norm.nil? || (norm.respond_to?(:empty?) && norm.empty?)
+
         gc = (payload['generationConfig'] ||= {})
-        gc['responseMimeType'] = variables['response_mime_type'] if variables['response_mime_type']
-        gc['responseSchema']   = variables['response_schema']     if variables['response_schema']
+        gc['responseMimeType'] = variables['response_mime_type'] if call('value_present', variables['response_mime_type'])
+        gc['responseSchema']   = variables['response_schema']     if call('value_present', variables['response_schema'])
 
-        payload['labels'] = variables['labels'] if variables['labels']
+        payload['labels'] = variables['labels'] if call('value_present', variables['labels'])
         payload
       when 'vertex_passthrough'
         src = variables['payload'] || variables['payload_json'] || variables['fully_formed'] || variables['request_json']
@@ -919,8 +900,15 @@
 
       # Embedding
       when 'embedding'
+        texts = Array(variables['texts'])
+        # @note PATCH 10/01/25-1 enforced model constraint to fail appropriately
+        if variables['model'].to_s == 'gemini-embedding-001' && texts.length > 1
+          corr = "#{Time.now.utc.to_i}-#{SecureRandom.hex(6)}"
+          error("gemini-embedding-001 supports one text per request. Received #{texts.length}. Split into multiple calls or use Batch. [corr_id=#{corr}]")
+        end
+
         body = {
-          'instances' => variables['texts'].map { |text|
+          'instances' => texts.map { |text|
             {
               'content'   => text,
               'task_type' => variables['task_type'] || 'RETRIEVAL_DOCUMENT',
@@ -928,11 +916,18 @@
             }.compact
           }
         }
+        # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
         params = {}
-        params['autoTruncate']          = variables['auto_truncate'] unless variables['auto_truncate'].nil?
-        params['outputDimensionality']  = variables['output_dimensionality'] if variables['output_dimensionality']
-        body['parameters'] = params unless params.empty? 
+        if call('value_present', variables['auto_truncate'])
+          params['autoTruncate'] = variables['auto_truncate']
+        end
+        if call('value_present', variables['output_dimensionality'])
+          params['outputDimensionality'] = variables['output_dimensionality']
+        end
+        body['parameters'] = params unless params.empty?
+
         body
+
       # Vector search
       when 'find_neighbors'
         queries = Array(variables['queries']).map do |q|
@@ -999,9 +994,8 @@
           'generationConfig' => call('build_generation_config', variables)
         }
 
-        if variables['safety_settings']
-          payload['safetySettings'] = call('normalize_safety_settings', variables['safety_settings'])
-        end
+        norm = call('normalize_safety_settings', variables['safety_settings'])
+        payload['safetySettings'] = norm unless norm.nil? || (norm.respond_to?(:empty?) && norm.empty?)
 
         payload
         
@@ -1010,11 +1004,11 @@
       end
     end,
     
-    # Response Enrichment
+    # --- Response Enrichment
+    # @note PATCH 10/01/25-4 expose http trace for debugging purposes
     enrich_response: lambda do |response:, metadata: {}|
       base  = response.is_a?(Hash) ? JSON.parse(JSON.dump(response)) : { 'result' => response }
-      trace = base.delete('_trace')
-      _http = base.delete('_http') # kept internal; not exposed
+      trace = base.delete('_trace') || (base['result'].is_a?(Hash) ? base['result'].delete('_trace') : nil)
 
       # Preserve success if caller provided it; otherwise assume true
       success = base.key?('success') ? base['success'] : true
@@ -1022,11 +1016,13 @@
       # Build a uniform trace object (always present)
       trace_hash  = trace.is_a?(Hash) ? trace : {}
       final_trace = {
-        'correlation_id' => trace_hash['correlation_id'] || SecureRandom.hex(8),
-        'duration_ms'    => (trace_hash['duration_ms'] || 0).to_i,
-        'attempt'        => (trace_hash['attempt'] || 1).to_i
-      }
-      final_trace['rate_limit'] = trace_hash['rate_limit'] if trace_hash['rate_limit']
+        'correlation_id'    => trace_hash['correlation_id'] || SecureRandom.hex(8),
+        'duration_ms'       => (trace_hash['duration_ms'] || 0).to_i,
+        'attempt'           => (trace_hash['attempt'] || 1).to_i,
+        'http_status'       => trace_hash['http_status'],
+        'remote_request_id' => trace_hash['remote_request_id'],
+        'rate_limit'        => trace_hash['rate_limit']
+      }.compact
 
       base.merge(
         'success'   => success,
@@ -1036,7 +1032,7 @@
       ).compact
     end,
 
-    # Response Extraction
+    # --- Response Extraction
     extract_response: lambda do |data:, path: nil, format: 'raw'|
       case format
       # Raw data
@@ -1065,7 +1061,7 @@
       end
     end,
 
-    # HTTP Request Execution
+    # --- HTTP Request Execution
     http_request: lambda do |connection, method:, url:, payload: nil, headers: {}, retry_config: {}, request_format: 'json'|
       max_attempts = (retry_config['max_attempts'] || retry_config['max_retries'] || 3).to_i
       base_backoff = (retry_config['backoff'] || 1.0).to_f
@@ -1158,7 +1154,7 @@
       error(msg)
     end,
 
-    # Data Transformation
+    # --- Data Transformation
     transform_data: lambda do |input:, from_format:, to_format:, connection: nil|
       case "#{from_format}_to_#{to_format}"
       when 'url_to_base64'
@@ -1180,7 +1176,7 @@
       end
     end,
     
-    # Input Validation
+    # --- Input Validation
     validate_input: lambda do |data:, schema: [], constraints: []|
       errors = []
       
@@ -1190,7 +1186,8 @@
         field_value = data[field_name]
         
         # Required check
-        if field['required'] && (field_value.nil? || field_value.to_s.empty?)
+        # @note PATCH 10/01/25-3 updated to treat [] {} as missing for required fields
+        if field['required'] && !call('value_present', field_value)
           errors << "#{field_name} is required"
         end
         
@@ -1284,7 +1281,7 @@
       true
     end,
     
-    # Error Recovery
+    # --- Error Recovery
     with_resilience: lambda do |operation:, config: {}, task: {}, connection: nil, &blk|
       # Rate limiting (per-job) — always initialize and use a unique name
       rate_limit_info = nil
@@ -1339,10 +1336,8 @@
       end
     end,
 
-    # ============================================
-    # LAYER 2: UNIVERSAL PIPELINE
-    # ============================================
-    
+
+    # ------ LAYER 2: UNIVERSAL PIPELINE -----------------------
     execute_pipeline: lambda do |connection, operation, input, config|
       # Don't mutate the input
       local = call('deep_copy', input)
@@ -1371,7 +1366,8 @@
       end
 
       # -- Ensure selected model from ops config is visible to URL builder
-      local['model'] ||= config['model']
+      # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
+      local['model'] = config['model'] unless call('value_present', local['model'])
 
       # 3. Build payload
       payload = if config['payload']
@@ -1398,8 +1394,7 @@
           'payload'      => payload,
           'headers'      => call('build_headers', connection),
           'retry_config' => (config.dig('resilience', 'retry') || {})
-        },
-        connection: connection
+        }, connection: connection
       )
       
       trace_from_response = (response.is_a?(Hash) ? response['_trace'] : nil)
@@ -1414,6 +1409,11 @@
       else
         response
       end
+      
+      # 7. Post-process
+      if config['post_process']
+        extracted = call(config['post_process'], extracted, local)
+      end
 
       # Preserve trace even if extracted is a primitive
       if trace_from_response
@@ -1425,23 +1425,16 @@
         end
       end
       
-      # 7. Post-process
-      if config['post_process']
-        extracted = call(config['post_process'], extracted, local)
-      end
-      
       # 8. Enrich
       call('enrich_response',
         response: extracted,
         metadata: { 'operation' => operation, 'model' => config['model'] || local['model'] }
       )
     end,
-    
-    # ============================================
-    # LAYER 3: BEHAVIOR & CONFIGURATION
-    # ============================================
-    
-    # Behavior Registry - Catalog of capabilities
+
+
+    # ------ LAYER 3: BEHAVIOR & CONFIGURATION -----------------
+    # --- Behavior Registry - Catalog of capabilities
     behavior_registry: lambda do
       {
         # Text Operations
@@ -1561,6 +1554,7 @@
           }
         },
         # Embedding Operations
+        #
         'text.embed' => {
           description: 'Generate text embeddings',
           capability: 'embedding',
@@ -1698,7 +1692,7 @@
       }
     end,
     
-    # Configuration Registry - User preferences
+    # --- Configuration Registry - User preferences
     configuration_registry: lambda do |connection, user_config|
       {
         # Model selection
@@ -1740,7 +1734,7 @@
       }
     end,
     
-    # Main execution method combining all layers
+    # --- Main execution method combining all layers
     execute_behavior: lambda do |connection, behavior, input, user_config = {}|
       behavior_def = call('behavior_registry')[behavior] or error("Unknown behavior: #{behavior}")
       local_input = call('deep_copy', input) # Work on a local copy only
@@ -1766,11 +1760,22 @@
       end
 
       operation_config['model'] = call('select_model', behavior_def, cfg, local_input)
-      # methods.execute_behavior (after setting operation_config['model'])
+
+      # @note PATCH 10/01/25-2 add breadcrumb to troubleshoot model selection
+      selection_mode = (local_input['model_mode'] || cfg.dig(:models, :mode) || 'auto').to_s
+      strategy       = (cfg.dig(:models, :strategy) || 'balanced').to_s
+      explicit_in    = user_config['model']
+
+
+      # @note PATCH 10/01/25-1 forcing sane fallback rather than issuing a bad :predict call
       if behavior_def[:supported_models].any? && !behavior_def[:supported_models].include?(operation_config['model'])
-        # force a sane fallback rather than issuing a bad :predict call
-        operation_config['model'] = call('select_model', behavior_def, cfg, local_input.merge('model_mode' => 'auto'))
+        # @note PATCH 10/01/25-3 Re-select while ignoring any explicit/override model that may have been carried along
+        scrubbed = call('deep_copy', local_input)
+        scrubbed.delete('model')
+        scrubbed.delete('model_override')
+        operation_config['model'] = call('select_model', behavior_def, cfg, scrubbed.merge('model_mode' => 'auto'))
       end
+
       operation_config['resilience'] = cfg[:execution]
 
       # Caching key is derived from local_input
@@ -1800,26 +1805,35 @@
 
       result = call('execute_pipeline', connection, behavior, local_input, operation_config)
 
+      # @note PATCH 10/01/25-2 enforce breadcrumbs
+      if result.is_a?(Hash) && result['trace'].is_a?(Hash)
+        result['trace']['model_selection'] = {
+          'mode'            => selection_mode,        # auto / explicit / connection
+          'strategy'        => strategy,             # balanced / cost / performance
+          'explicit_model'  => explicit_in,          # what the user asked for
+          'effective_model' => operation_config['model'] # what we used
+        }.compact
+      end
+
       if cfg[:features][:caching][:enabled]
         call('memo_put', cache_key, result, cfg[:features][:caching][:ttl] || 300)
       end
 
       result
     end,
-    
-    # ============================================
-    # HELPER METHODS
-    # ============================================
-    
+
+
+    # ------ HELPER METHODS ------------------------------------
     # Post-processing methods
     add_upsert_ack: lambda do |response, input|
       # response is empty on success; return a useful ack
-      {
+      out = {
         'ack'         => 'upserted',
         'count'       => Array(input['datapoints']).size,
         'index'       => input['index'],
         'empty_body'  => (response.nil? || response == {})
       }
+      out
     end,
 
     add_word_count: lambda do |response, input|
@@ -1909,7 +1923,8 @@
         base_host = (region == 'global') ? 'aiplatform.googleapis.com' : "#{region}-aiplatform.googleapis.com"
         base_url  = "https://#{base_host}/#{api_version}"
 
-        model   = input['model'] || connection['default_model'] || 'gemini-1.5-flash'
+        # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
+        model = call('value_present', input['model']) ? input['model'] : (connection['default_model'] || 'gemini-1.5-flash')
         model_id = model.to_s
 
         # Honor lock model revision input flag
@@ -1936,13 +1951,14 @@
       end
     end,
     
+    # @note PATCH 10/01/25-3 modified to default only when inputs are actually absent
     build_generation_config: lambda do |vars|
       {
-        'temperature'     => vars['temperature'] || 0.7,
-        'maxOutputTokens' => vars['max_tokens']  || 2048,
-        'topP'            => vars['top_p']       || 0.95,
-        'topK'            => vars['top_k']       || 40,
-        'stopSequences'   => vars['stop_sequences']
+        'temperature'     => call('value_present', vars['temperature']) ? vars['temperature'] : 0.7,
+        'maxOutputTokens' => call('value_present', vars['max_tokens'])  ? vars['max_tokens']  : 2048,
+        'topP'            => call('value_present', vars['top_p'])       ? vars['top_p']       : 0.95,
+        'topK'            => call('value_present', vars['top_k'])       ? vars['top_k']       : 40,
+        'stopSequences'   => call('value_present', vars['stop_sequences']) ? vars['stop_sequences'] : nil
       }.compact
     end,
 
@@ -2173,7 +2189,6 @@
       end
     end,
 
-    # methods.extract_ids_for_read (replace with mode-aware version)
     extract_ids_for_read: lambda do |vars|
       mode = (vars['id_source'] || 'auto').to_s
       pick = lambda do |source|
@@ -2207,7 +2222,9 @@
 
       # Prefer config_fields values; fall back to input (back-compat)
       mode = (config_ctx['model_mode'] || input['model_mode'] || '').to_s
-      explicit_model = config_ctx['model'] || input['model'] || input['model_override']
+      #explicit_model = config_ctx['model'] || input['model'] || input['model_override']
+      # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
+      explicit_model = call('value_present', input['model']) ? input['model'] : config_ctx['model'] || input['model_override']
 
       case mode
       when 'explicit'
@@ -2645,6 +2662,7 @@
     # Get behavior output fields
     get_behavior_output_fields: lambda do |behavior|
       case behavior
+      # Text
       when 'text.generate'
         [{ name: 'result', label: 'Generated Text' }]
       when 'text.translate'
@@ -2662,15 +2680,21 @@
           { name: 'category', label: 'Selected Category' },
           { name: 'confidence', type: 'number' }
         ]
+      # Embedding
       when 'text.embed'
         [
-          { name: 'embeddings', type: 'array', of: 'array' },
-          { name: 'vectors', type: 'array', of: 'object', properties: [ { name: 'feature_vector', type: 'array', of: 'number' } ]},
+          { name: 'embeddings', type: 'array', of: 'object', properties: [
+            { name: 'values', label: 'Values', type: 'array', of: 'number'}]},
+          # @note PATCH 10/01/25-1, added properties to ensure output is emitted as expected
+          # @note PATCH 10/01/25-2, removed erroneous trailing space in scalar type 
+          { name: 'vectors', type: 'array', of: 'object', properties: [ 
+            { name: 'feature_vector', type: 'array', of: 'number' } ]},
           { name: 'count', type: 'integer' },
           { name: 'dimension', type: 'integer' },
           { name: 'avg_norm', type: 'number' },
           { name: 'norms', type: 'array', of: 'number' } 
         ]
+      # Vector search
       when 'vector.upsert_datapoints'
         [
           { name: 'ack' }, { name: 'count', type: 'integer' }, { name: 'index' }, { name: 'empty_body', type: 'boolean' }
@@ -2716,6 +2740,7 @@
             { name: 'embedding_metadata', type: 'object' }
           ] }
         ]
+      # Multimodal
       when 'multimodal.analyze'
         [{ name: 'result', label: 'Analysis' }]
       else
@@ -2926,23 +2951,19 @@
     end,
 
     # Resolve an alias to the latest version available
+    # @note PATCH 10/01/25-2 hardened to guard for gecko model version style
     resolve_model_version: lambda do |connection, short|
-      # If already versioned, keep it
-      return short if short.to_s.match?(/-\d{3,}$/)
+      return short if short.to_s.match?(/(-\d{3,}|@\d{3,})$/)
 
       cache_key = "model_resolve:#{short}"
-      if (cached = call('memo_get', cache_key))
-        return cached
-      end
+      if (cached = call('memo_get', cache_key)); return cached; end
 
       ids = Array(call('list_publisher_models', connection))
               .map { |m| (m['name'] || '').split('/').last }
-              .select { |id| id.start_with?("#{short}-") }
+              .select { |id| id.start_with?("#{short}-") || id.start_with?("#{short}@") }
 
-      latest = ids.max_by { |id| id[/-(\d+)$/, 1].to_i }
-
-      # IMPORTANT: if nothing is found, fall back to the alias itself (Vertex supports aliases)
-      chosen = latest || short
+      latest = ids.max_by { |id| id[/[-@](\d+)$/, 1].to_i }
+      chosen = latest || short  # fall back to alias if no numeric
       call('memo_put', cache_key, chosen, 3600)
       chosen
     end,
@@ -2960,10 +2981,10 @@
 
     # Model selection logic
     select_model: lambda do |behavior_def, cfg, input|
-      # 0) Respect explicit model in put
-      if (input['model'] && !input['model'].to_s.strip.empty?) ||
-        (input['model_override'] && !input['model_override'].to_s.strip.empty?)
-        return input['model'] || input['model_override']
+      # 0) Respect explicit model in input
+      # @note PATCH 10/01/25-3 using helper so that nil and empty arrays/hashes are treated as not present
+      if call('value_present', input['model']) || call('value_present', input['model_override'])
+        return call('value_present', input['model']) ? input['model'] : input['model_override']
       end
 
       mode      = (input['model_mode'] || cfg.dig(:models, :mode) || 'auto').to_s
@@ -3080,19 +3101,20 @@
     end,
 
     # Wrap raw embedding arrays with an upsert-friendly shape, preserve trace
+    # @note PATCH 10/01/25-1 updated to emit prooper shapes from calling fx
     wrap_embeddings_vectors: lambda do |response, input|
       raw = if response.is_a?(Hash) && response.key?('result')
         response['result']
       else
         response
       end
-      arr = Array(raw).map { |v| Array(v).map(&:to_f) }
 
+      arr = Array(raw).map { |v| Array(v).map(&:to_f) }
       norms = arr.map { |v| Math.sqrt(v.reduce(0.0) { |s, x| s + (x.to_f * x.to_f) }) }
       dim   = arr.first ? arr.first.length : nil
 
       out = {
-        'embeddings' => arr,
+        'embeddings' => arr.map { |v| { 'values' => v } },      # <-- new, pill‑friendly
         'vectors'    => arr.map { |v| { 'feature_vector' => v } },
         'count'      => arr.length,
         'dimension'  => dim,
@@ -3100,17 +3122,15 @@
         'avg_norm'   => call('safe_mean', norms)
       }.compact
 
-      if response.is_a?(Hash) && response['_trace']
-        out['_trace'] = response['_trace']
-      end
+      out['_trace'] = response['_trace'] if response.is_a?(Hash) && response['_trace']
       out
     end
 
   },
 
-  # ============================================
+  # ============================================================
   # PICK LISTS
-  # ============================================
+  # ============================================================
   pick_lists: {
 
     all_models: lambda do |connection|
@@ -3189,6 +3209,7 @@
       end
     end,
 
+    # @note PATCH 10/01/25-1 exposed gemini-embedding-* in dynamic pick list when behavior is embeddings
     models_dynamic_for_behavior: lambda do |connection, behavior: nil, **_|
       prefixes = if behavior.to_s == 'text.embed'
         ['text-embedding-', 'textembedding-', 'gemini-embedding-']
@@ -3219,14 +3240,6 @@
         end
       end
       items
-    end,
-
-    # DEPRECATED: remove after testing/development
-    models_generation_dynamic: lambda do |connection|
-      call('list_publisher_models', connection)
-        .map { |m| id = (m['name'] || '').split('/').last; [m['displayName'] || id, id] }
-        .select { |_label, id| id.start_with?('gemini-') }
-        .sort_by { |_label, id| - (id[/-(\d+)$/, 1].to_i) }
     end,
 
     safety_categories: lambda do |_connection|
@@ -3280,22 +3293,21 @@
     end
   },
 
-  # ============================================
-  # OBJECT DEFINITIONS (Reusable Schemas)
-  # ============================================
+  # ============================================================
+  # OBJECT DEFINITIONS
+  # ============================================================
   object_definitions: {
     generation_config: {
       fields: lambda do |connection|
         [
-          { name: 'temperature', type: 'number', hint: 'Controls randomness (0-1)' },
-          { name: 'max_tokens', type: 'integer', hint: 'Maximum response length' },
-          { name: 'top_p', type: 'number', hint: 'Nucleus sampling' },
-          { name: 'top_k', type: 'integer', hint: 'Top-k sampling' },
-          { name: 'stop_sequences', type: 'array', of: 'string', hint: 'Stop generation at these sequences' }
+          { name: 'temperature', type: 'number', hint: 'Controls randomness (0-1)', group: 'Generation options' },
+          { name: 'max_tokens', type: 'integer', hint: 'Maximum response length', group: 'Generation options' },
+          { name: 'top_p', type: 'number', hint: 'Nucleus sampling', group: 'Generation options' },
+          { name: 'top_k', type: 'integer', hint: 'Top-k sampling' , group: 'Generation options,' },
+          { name: 'stop_sequences', type: 'array', of: 'string', hint: 'Stop generation at these sequences', group: 'Generation options' }
         ]
       end
     },
-    
     safety_settings: {
       fields: lambda do |_connection|
         [
@@ -3308,14 +3320,14 @@
     }
   },
 
-  # ============================================
-  # TRIGGERS (if needed)
-  # ============================================
+  # ============================================================
+  # TRIGGERS
+  # ============================================================
   triggers: {},
   
-  # ============================================
+  # ============================================================
   # CUSTOM ACTION SUPPORT
-  # ============================================
+  # ============================================================
   custom_action: true,
   custom_action_help: {
     body: 'Create custom Vertex AI operations using the established connection'

@@ -1,3 +1,4 @@
+connector.rb
 /vendor/
-/out/
+/.out/
 /.bundle/
