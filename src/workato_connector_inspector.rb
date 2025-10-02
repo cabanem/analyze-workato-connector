@@ -377,7 +377,7 @@ end
 class ConnectorWalker
   include Util
 
-  def initialize(filename:, ast:, comments: {})
+  def initialize(filename:, ast:, comments: {}, max_warnings: 10_000)
     @filename, @ast, @comments = filename, ast, (comments || {})
     @graph = IR::Graph.new(directed: true)
     @issues = []
@@ -385,6 +385,9 @@ class ConnectorWalker
     @methods_defined = Set.new
     @methods_called = []
     @lambda_records = []
+    @max_warnings = max_warnings || 10_000
+    @warnings_emitted = 0
+    @warning_cap_announced = false
   end
 
   def walk
@@ -404,7 +407,24 @@ class ConnectorWalker
   private
 
   def issue(sev, code, msg, loc = {}, ctx = {})
-    @issues << IR::Issue.new(severity: sev, code: code, message: msg, loc: loc, context: ctx)
+    sev_sym = sev.to_s.to_sym
+    if sev_sym == :warning
+      if @warnings_emitted >= @max_warnings
+        unless @warning_cap_announced
+          @issues << IR::Issue.new(
+            severity: :info,
+            code: 'warning_cap_reached',
+            message: "Reached --max-warnings=#{@max_warnings}; further warnings suppressed",
+            loc: {},
+            context: {}
+          )
+          @warning_cap_announced = true
+        end
+        return
+      end
+      @warnings_emitted += 1
+    end
+    @issues << IR::Issue.new(severity: sev, code: code, message: msg, loc: loc || {}, context: ctx || {})
   end
 
   def traverse(node, &blk)
@@ -860,11 +880,11 @@ class Emit
 
 
     # Markdown summary
-    if emit.include?('graphjson')
-      paths[:graph_json] = write_json(
-        File.join(outdir, Util.safe_filename("#{base}.graph", '.json')),
-        { nodes: bundle.graph.nodes.map { |id, info| { id: id, **info } },
-          edges: bundle.graph.edges.to_a.map { |from, to, meta| { from: from, to: to, **(meta || {}) } } }, pretty)
+    if emit.include?('md')
+      paths[:md] = write_text(
+        File.join(outdir, Util.safe_filename("#{base}.summary", '.md')),
+        Emit.markdown_summary(bundle)
+      )
     end
 
 
@@ -1143,7 +1163,12 @@ class CLI
     bundle =
       if ast_res[:ast]
         # 2) Walk AST
-        walker = ConnectorWalker.new(filename: path, ast: ast_res[:ast], comments: ast_res[:comments])
+        walker = ConnectorWalker.new(
+          filename: path,
+          ast: ast_res[:ast],
+          comments: ast_res[:comments],
+          max_warnings: options[:max_warnings]
+        )
         walker.walk
       else
         # 3) Salvage
