@@ -1,0 +1,1141 @@
+{
+  "nodes": [
+    {
+      "id": "connector#test",
+      "label": "connector#test",
+      "kind": "lambda"
+    },
+    {
+      "id": "method:list_publisher_models",
+      "label": "method:list_publisher_models",
+      "kind": "method"
+    },
+    {
+      "id": "method:build_endpoint_url",
+      "label": "method:build_endpoint_url",
+      "kind": "method"
+    },
+    {
+      "id": "method:http_request",
+      "label": "method:http_request",
+      "kind": "method"
+    },
+    {
+      "id": "method:build_headers",
+      "label": "method:build_headers",
+      "kind": "method"
+    },
+    {
+      "id": "method:build_payload",
+      "label": "method:build_payload",
+      "kind": "method"
+    },
+    {
+      "id": "method:apply_template",
+      "label": "method:apply_template",
+      "kind": "method"
+    },
+    {
+      "id": "method:build_generation_config",
+      "label": "method:build_generation_config",
+      "kind": "method"
+    },
+    {
+      "id": "method:normalize_safety_settings",
+      "label": "method:normalize_safety_settings",
+      "kind": "method"
+    },
+    {
+      "id": "method:value_present",
+      "label": "method:value_present",
+      "kind": "method"
+    },
+    {
+      "id": "method:coerce_embeddings_to_datapoints",
+      "label": "method:coerce_embeddings_to_datapoints",
+      "kind": "method"
+    },
+    {
+      "id": "method:extract_ids_for_read",
+      "label": "method:extract_ids_for_read",
+      "kind": "method"
+    },
+    {
+      "id": "method:enrich_response",
+      "label": "method:enrich_response",
+      "kind": "method"
+    },
+    {
+      "id": "method:enrich_response::http#delete(_trace)",
+      "label": "DELETE _trace",
+      "kind": "http"
+    },
+    {
+      "id": "method:extract_response",
+      "label": "method:extract_response",
+      "kind": "method"
+    },
+    {
+      "id": "method:http_request::http#get(...)",
+      "label": "GET (dynamic)",
+      "kind": "http"
+    },
+    {
+      "id": "method:http_request::http#post(...)",
+      "label": "POST (dynamic)",
+      "kind": "http"
+    },
+    {
+      "id": "method:http_request::http#put(...)",
+      "label": "PUT (dynamic)",
+      "kind": "http"
+    },
+    {
+      "id": "method:http_request::http#delete(...)",
+      "label": "DELETE (dynamic)",
+      "kind": "http"
+    },
+    {
+      "id": "method:normalize_http_error",
+      "label": "method:normalize_http_error",
+      "kind": "method"
+    },
+    {
+      "id": "method:format_user_error",
+      "label": "method:format_user_error",
+      "kind": "method"
+    },
+    {
+      "id": "method:transform_data",
+      "label": "method:transform_data",
+      "kind": "method"
+    },
+    {
+      "id": "method:validate_input",
+      "label": "method:validate_input",
+      "kind": "method"
+    },
+    {
+      "id": "method:each_in_scope",
+      "label": "method:each_in_scope",
+      "kind": "method"
+    },
+    {
+      "id": "method:with_resilience",
+      "label": "method:with_resilience",
+      "kind": "method"
+    },
+    {
+      "id": "method:check_rate_limit",
+      "label": "method:check_rate_limit",
+      "kind": "method"
+    },
+    {
+      "id": "method:memo_get",
+      "label": "method:memo_get",
+      "kind": "method"
+    },
+    {
+      "id": "method:memo_put",
+      "label": "method:memo_put",
+      "kind": "method"
+    },
+    {
+      "id": "method:execute_pipeline",
+      "label": "method:execute_pipeline",
+      "kind": "method"
+    },
+    {
+      "id": "method:behavior_registry",
+      "label": "method:behavior_registry",
+      "kind": "method"
+    },
+    {
+      "id": "method:configuration_registry",
+      "label": "method:configuration_registry",
+      "kind": "method"
+    },
+    {
+      "id": "method:execute_behavior",
+      "label": "method:execute_behavior",
+      "kind": "method"
+    },
+    {
+      "id": "method:select_model",
+      "label": "method:select_model",
+      "kind": "method"
+    },
+    {
+      "id": "method:deep_copy",
+      "label": "method:deep_copy",
+      "kind": "method"
+    },
+    {
+      "id": "method:execute_behavior::http#delete(model)",
+      "label": "DELETE model",
+      "kind": "http"
+    },
+    {
+      "id": "method:execute_behavior::http#delete(model_override)",
+      "label": "DELETE model_override",
+      "kind": "http"
+    },
+    {
+      "id": "method:debug_embedding_response",
+      "label": "method:debug_embedding_response",
+      "kind": "method"
+    },
+    {
+      "id": "method:add_upsert_ack",
+      "label": "method:add_upsert_ack",
+      "kind": "method"
+    },
+    {
+      "id": "method:add_word_count",
+      "label": "method:add_word_count",
+      "kind": "method"
+    },
+    {
+      "id": "method:approx_token_count",
+      "label": "method:approx_token_count",
+      "kind": "method"
+    },
+    {
+      "id": "method:augment_vector_context",
+      "label": "method:augment_vector_context",
+      "kind": "method"
+    },
+    {
+      "id": "method:discover_index_config",
+      "label": "method:discover_index_config",
+      "kind": "method"
+    },
+    {
+      "id": "method:qualify_resource",
+      "label": "method:qualify_resource",
+      "kind": "method"
+    },
+    {
+      "id": "method:vector_search_base",
+      "label": "method:vector_search_base",
+      "kind": "method"
+    },
+    {
+      "id": "method:resolve_model_version",
+      "label": "method:resolve_model_version",
+      "kind": "method"
+    },
+    {
+      "id": "method:chunk_by_tokens",
+      "label": "method:chunk_by_tokens",
+      "kind": "method"
+    },
+    {
+      "id": "method:coerce_kwargs",
+      "label": "method:coerce_kwargs",
+      "kind": "method"
+    },
+    {
+      "id": "method:confidence_from_distance",
+      "label": "method:confidence_from_distance",
+      "kind": "method"
+    },
+    {
+      "id": "method:error_hint",
+      "label": "method:error_hint",
+      "kind": "method"
+    },
+    {
+      "id": "method:extract_user_config",
+      "label": "method:extract_user_config",
+      "kind": "method"
+    },
+    {
+      "id": "method:execute_batch_behavior",
+      "label": "method:execute_batch_behavior",
+      "kind": "method"
+    },
+    {
+      "id": "method:get_behavior_input_fields",
+      "label": "method:get_behavior_input_fields",
+      "kind": "method"
+    },
+    {
+      "id": "method:get_behavior_output_fields",
+      "label": "method:get_behavior_output_fields",
+      "kind": "method"
+    },
+    {
+      "id": "method:memo_store",
+      "label": "method:memo_store",
+      "kind": "method"
+    },
+    {
+      "id": "method:normalize_find_neighbors",
+      "label": "method:normalize_find_neighbors",
+      "kind": "method"
+    },
+    {
+      "id": "method:safe_mean",
+      "label": "method:safe_mean",
+      "kind": "method"
+    },
+    {
+      "id": "method:retryable_http_code",
+      "label": "method:retryable_http_code",
+      "kind": "method"
+    },
+    {
+      "id": "method:parse_retry_after",
+      "label": "method:parse_retry_after",
+      "kind": "method"
+    },
+    {
+      "id": "method:normalize_read_index_datapoints",
+      "label": "method:normalize_read_index_datapoints",
+      "kind": "method"
+    },
+    {
+      "id": "method:telemetry_envelope_fields",
+      "label": "method:telemetry_envelope_fields",
+      "kind": "method"
+    },
+    {
+      "id": "method:trace_fields",
+      "label": "method:trace_fields",
+      "kind": "method"
+    },
+    {
+      "id": "method:to_query",
+      "label": "method:to_query",
+      "kind": "method"
+    },
+    {
+      "id": "method:wrap_embeddings_vectors_v1",
+      "label": "method:wrap_embeddings_vectors_v1",
+      "kind": "method"
+    },
+    {
+      "id": "method:wrap_embeddings_vectors",
+      "label": "method:wrap_embeddings_vectors",
+      "kind": "method"
+    },
+    {
+      "id": "action:batch_operation#input_fields",
+      "label": "action:batch_operation#input_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:batch_operation#execute",
+      "label": "action:batch_operation#execute",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:batch_operation#output_fields",
+      "label": "action:batch_operation#output_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:batch_operation#sample_output",
+      "label": "action:batch_operation#sample_output",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:vertex_operation#input_fields",
+      "label": "action:vertex_operation#input_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:vertex_operation#execute",
+      "label": "action:vertex_operation#execute",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:vertex_operation#output_fields",
+      "label": "action:vertex_operation#output_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:vertex_operation#sample_output",
+      "label": "action:vertex_operation#sample_output",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:discover_index_config#input_fields",
+      "label": "action:discover_index_config#input_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:discover_index_config#execute",
+      "label": "action:discover_index_config#execute",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:discover_index_config#output_fields",
+      "label": "action:discover_index_config#output_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:discover_index_config#sample_output",
+      "label": "action:discover_index_config#sample_output",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:classify_text#input_fields",
+      "label": "action:classify_text#input_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:classify_text#execute",
+      "label": "action:classify_text#execute",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:classify_text#output_fields",
+      "label": "action:classify_text#output_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:classify_text#sample_output",
+      "label": "action:classify_text#sample_output",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:generate_text#input_fields",
+      "label": "action:generate_text#input_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:generate_text#execute",
+      "label": "action:generate_text#execute",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:generate_text#output_fields",
+      "label": "action:generate_text#output_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:generate_text#sample_output",
+      "label": "action:generate_text#sample_output",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:find_neighbors#input_fields",
+      "label": "action:find_neighbors#input_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:find_neighbors#execute",
+      "label": "action:find_neighbors#execute",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:find_neighbors#output_fields",
+      "label": "action:find_neighbors#output_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:read_index_datapoints#input_fields",
+      "label": "action:read_index_datapoints#input_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:read_index_datapoints#execute",
+      "label": "action:read_index_datapoints#execute",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:read_index_datapoints#output_fields",
+      "label": "action:read_index_datapoints#output_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:read_index_datapoints#sample_output",
+      "label": "action:read_index_datapoints#sample_output",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:upsert_index_datapoints#input_fields",
+      "label": "action:upsert_index_datapoints#input_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:upsert_index_datapoints#execute",
+      "label": "action:upsert_index_datapoints#execute",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:upsert_index_datapoints#output_fields",
+      "label": "action:upsert_index_datapoints#output_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:generate_embeddings#input_fields",
+      "label": "action:generate_embeddings#input_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:generate_embeddings#execute",
+      "label": "action:generate_embeddings#execute",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:generate_embeddings#output_fields",
+      "label": "action:generate_embeddings#output_fields",
+      "kind": "lambda"
+    },
+    {
+      "id": "action:generate_embeddings#sample_output",
+      "label": "action:generate_embeddings#sample_output",
+      "kind": "lambda"
+    }
+  ],
+  "edges": [
+    {
+      "from": "connector#test",
+      "to": "method:list_publisher_models",
+      "label": "calls"
+    },
+    {
+      "from": "connector#test",
+      "to": "method:build_endpoint_url",
+      "label": "calls"
+    },
+    {
+      "from": "connector#test",
+      "to": "method:http_request",
+      "label": "calls"
+    },
+    {
+      "from": "connector#test",
+      "to": "method:build_headers",
+      "label": "calls"
+    },
+    {
+      "from": "method:build_payload",
+      "to": "method:apply_template",
+      "label": "calls"
+    },
+    {
+      "from": "method:build_payload",
+      "to": "method:build_generation_config",
+      "label": "calls"
+    },
+    {
+      "from": "method:build_payload",
+      "to": "method:normalize_safety_settings",
+      "label": "calls"
+    },
+    {
+      "from": "method:build_payload",
+      "to": "method:value_present",
+      "label": "calls"
+    },
+    {
+      "from": "method:build_payload",
+      "to": "method:coerce_embeddings_to_datapoints",
+      "label": "calls"
+    },
+    {
+      "from": "method:build_payload",
+      "to": "method:extract_ids_for_read",
+      "label": "calls"
+    },
+    {
+      "from": "method:enrich_response",
+      "to": "method:enrich_response::http#delete(_trace)",
+      "label": "calls"
+    },
+    {
+      "from": "method:http_request",
+      "to": "method:http_request::http#get(...)",
+      "label": "calls"
+    },
+    {
+      "from": "method:http_request",
+      "to": "method:http_request::http#post(...)",
+      "label": "calls"
+    },
+    {
+      "from": "method:http_request",
+      "to": "method:http_request::http#put(...)",
+      "label": "calls"
+    },
+    {
+      "from": "method:http_request",
+      "to": "method:http_request::http#delete(...)",
+      "label": "calls"
+    },
+    {
+      "from": "method:http_request",
+      "to": "method:http_request",
+      "label": "after_error_response"
+    },
+    {
+      "from": "method:http_request",
+      "to": "method:normalize_http_error",
+      "label": "calls"
+    },
+    {
+      "from": "method:http_request",
+      "to": "method:format_user_error",
+      "label": "calls"
+    },
+    {
+      "from": "method:transform_data",
+      "to": "method:http_request",
+      "label": "calls"
+    },
+    {
+      "from": "method:validate_input",
+      "to": "method:value_present",
+      "label": "calls"
+    },
+    {
+      "from": "method:validate_input",
+      "to": "method:each_in_scope",
+      "label": "calls"
+    },
+    {
+      "from": "method:with_resilience",
+      "to": "method:check_rate_limit",
+      "label": "calls"
+    },
+    {
+      "from": "method:with_resilience",
+      "to": "method:memo_get",
+      "label": "calls"
+    },
+    {
+      "from": "method:with_resilience",
+      "to": "method:http_request",
+      "label": "calls"
+    },
+    {
+      "from": "method:with_resilience",
+      "to": "method:memo_put",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_pipeline",
+      "to": "method:validate_input",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_pipeline",
+      "to": "method:transform_data",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_pipeline",
+      "to": "method:value_present",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_pipeline",
+      "to": "method:build_payload",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_pipeline",
+      "to": "method:build_endpoint_url",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_pipeline",
+      "to": "method:with_resilience",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_pipeline",
+      "to": "method:build_headers",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_pipeline",
+      "to": "method:extract_response",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_pipeline",
+      "to": "method:enrich_response",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_behavior",
+      "to": "method:behavior_registry",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_behavior",
+      "to": "method:configuration_registry",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_behavior",
+      "to": "method:select_model",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_behavior",
+      "to": "method:deep_copy",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_behavior",
+      "to": "method:execute_behavior::http#delete(model)",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_behavior",
+      "to": "method:execute_behavior::http#delete(model_override)",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_behavior",
+      "to": "method:execute_pipeline",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_behavior",
+      "to": "method:memo_put",
+      "label": "calls"
+    },
+    {
+      "from": "method:augment_vector_context",
+      "to": "method:value_present",
+      "label": "calls"
+    },
+    {
+      "from": "method:augment_vector_context",
+      "to": "method:discover_index_config",
+      "label": "calls"
+    },
+    {
+      "from": "method:build_endpoint_url",
+      "to": "method:qualify_resource",
+      "label": "calls"
+    },
+    {
+      "from": "method:build_endpoint_url",
+      "to": "method:vector_search_base",
+      "label": "calls"
+    },
+    {
+      "from": "method:build_endpoint_url",
+      "to": "method:value_present",
+      "label": "calls"
+    },
+    {
+      "from": "method:build_endpoint_url",
+      "to": "method:resolve_model_version",
+      "label": "calls"
+    },
+    {
+      "from": "method:build_generation_config",
+      "to": "method:value_present",
+      "label": "calls"
+    },
+    {
+      "from": "method:check_rate_limit",
+      "to": "method:memo_get",
+      "label": "calls"
+    },
+    {
+      "from": "method:check_rate_limit",
+      "to": "method:memo_put",
+      "label": "calls"
+    },
+    {
+      "from": "method:chunk_by_tokens",
+      "to": "method:approx_token_count",
+      "label": "calls"
+    },
+    {
+      "from": "method:discover_index_config",
+      "to": "method:qualify_resource",
+      "label": "calls"
+    },
+    {
+      "from": "method:discover_index_config",
+      "to": "method:memo_get",
+      "label": "calls"
+    },
+    {
+      "from": "method:discover_index_config",
+      "to": "method:build_endpoint_url",
+      "label": "calls"
+    },
+    {
+      "from": "method:discover_index_config",
+      "to": "method:http_request",
+      "label": "calls"
+    },
+    {
+      "from": "method:discover_index_config",
+      "to": "method:build_headers",
+      "label": "calls"
+    },
+    {
+      "from": "method:discover_index_config",
+      "to": "method:memo_put",
+      "label": "calls"
+    },
+    {
+      "from": "method:extract_user_config",
+      "to": "method:value_present",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_batch_behavior",
+      "to": "method:chunk_by_tokens",
+      "label": "calls"
+    },
+    {
+      "from": "method:execute_batch_behavior",
+      "to": "method:execute_behavior",
+      "label": "calls"
+    },
+    {
+      "from": "method:get_behavior_input_fields",
+      "to": "method:behavior_registry",
+      "label": "calls"
+    },
+    {
+      "from": "method:list_publisher_models",
+      "to": "method:memo_get",
+      "label": "calls"
+    },
+    {
+      "from": "method:list_publisher_models",
+      "to": "method:build_endpoint_url",
+      "label": "calls"
+    },
+    {
+      "from": "method:list_publisher_models",
+      "to": "method:http_request",
+      "label": "calls"
+    },
+    {
+      "from": "method:list_publisher_models",
+      "to": "method:build_headers",
+      "label": "calls"
+    },
+    {
+      "from": "method:list_publisher_models",
+      "to": "method:memo_put",
+      "label": "calls"
+    },
+    {
+      "from": "method:memo_get",
+      "to": "method:memo_store",
+      "label": "calls"
+    },
+    {
+      "from": "method:memo_put",
+      "to": "method:memo_store",
+      "label": "calls"
+    },
+    {
+      "from": "method:normalize_find_neighbors",
+      "to": "method:transform_data",
+      "label": "calls"
+    },
+    {
+      "from": "method:normalize_find_neighbors",
+      "to": "method:confidence_from_distance",
+      "label": "calls"
+    },
+    {
+      "from": "method:normalize_find_neighbors",
+      "to": "method:safe_mean",
+      "label": "calls"
+    },
+    {
+      "from": "method:normalize_http_error",
+      "to": "method:error_hint",
+      "label": "calls"
+    },
+    {
+      "from": "method:normalize_http_error",
+      "to": "method:retryable_http_code",
+      "label": "calls"
+    },
+    {
+      "from": "method:normalize_http_error",
+      "to": "method:parse_retry_after",
+      "label": "calls"
+    },
+    {
+      "from": "method:resolve_model_version",
+      "to": "method:memo_get",
+      "label": "calls"
+    },
+    {
+      "from": "method:resolve_model_version",
+      "to": "method:list_publisher_models",
+      "label": "calls"
+    },
+    {
+      "from": "method:resolve_model_version",
+      "to": "method:memo_put",
+      "label": "calls"
+    },
+    {
+      "from": "method:select_model",
+      "to": "method:value_present",
+      "label": "calls"
+    },
+    {
+      "from": "method:telemetry_envelope_fields",
+      "to": "method:trace_fields",
+      "label": "calls"
+    },
+    {
+      "from": "method:wrap_embeddings_vectors_v1",
+      "to": "method:safe_mean",
+      "label": "calls"
+    },
+    {
+      "from": "method:wrap_embeddings_vectors",
+      "to": "method:safe_mean",
+      "label": "calls"
+    },
+    {
+      "from": "action:batch_operation#execute",
+      "to": "method:execute_batch_behavior",
+      "label": "calls"
+    },
+    {
+      "from": "action:batch_operation#execute",
+      "to": "method:deep_copy",
+      "label": "calls"
+    },
+    {
+      "from": "action:batch_operation#execute",
+      "to": "method:enrich_response",
+      "label": "calls"
+    },
+    {
+      "from": "action:batch_operation#output_fields",
+      "to": "method:telemetry_envelope_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:vertex_operation#input_fields",
+      "to": "method:get_behavior_input_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:vertex_operation#execute",
+      "to": "method:extract_user_config",
+      "label": "calls"
+    },
+    {
+      "from": "action:vertex_operation#execute",
+      "to": "method:deep_copy",
+      "label": "calls"
+    },
+    {
+      "from": "action:vertex_operation#execute",
+      "to": "method:execute_behavior",
+      "label": "calls"
+    },
+    {
+      "from": "action:vertex_operation#output_fields",
+      "to": "method:telemetry_envelope_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:vertex_operation#output_fields",
+      "to": "method:get_behavior_output_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:discover_index_config#execute",
+      "to": "method:deep_copy",
+      "label": "calls"
+    },
+    {
+      "from": "action:discover_index_config#execute",
+      "to": "method:discover_index_config",
+      "label": "calls"
+    },
+    {
+      "from": "action:discover_index_config#execute",
+      "to": "method:enrich_response",
+      "label": "calls"
+    },
+    {
+      "from": "action:discover_index_config#output_fields",
+      "to": "method:telemetry_envelope_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:classify_text#input_fields",
+      "to": "method:get_behavior_input_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:classify_text#execute",
+      "to": "method:extract_user_config",
+      "label": "calls"
+    },
+    {
+      "from": "action:classify_text#execute",
+      "to": "method:deep_copy",
+      "label": "calls"
+    },
+    {
+      "from": "action:classify_text#execute",
+      "to": "method:execute_behavior",
+      "label": "calls"
+    },
+    {
+      "from": "action:classify_text#output_fields",
+      "to": "method:telemetry_envelope_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:classify_text#output_fields",
+      "to": "method:get_behavior_output_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:generate_text#input_fields",
+      "to": "method:get_behavior_input_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:generate_text#execute",
+      "to": "method:extract_user_config",
+      "label": "calls"
+    },
+    {
+      "from": "action:generate_text#execute",
+      "to": "method:deep_copy",
+      "label": "calls"
+    },
+    {
+      "from": "action:generate_text#execute",
+      "to": "method:execute_behavior",
+      "label": "calls"
+    },
+    {
+      "from": "action:generate_text#output_fields",
+      "to": "method:telemetry_envelope_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:generate_text#output_fields",
+      "to": "method:get_behavior_output_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:find_neighbors#input_fields",
+      "to": "method:get_behavior_input_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:find_neighbors#execute",
+      "to": "method:deep_copy",
+      "label": "calls"
+    },
+    {
+      "from": "action:find_neighbors#execute",
+      "to": "method:execute_behavior",
+      "label": "calls"
+    },
+    {
+      "from": "action:find_neighbors#output_fields",
+      "to": "method:telemetry_envelope_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:find_neighbors#output_fields",
+      "to": "method:get_behavior_output_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:read_index_datapoints#input_fields",
+      "to": "method:get_behavior_input_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:read_index_datapoints#execute",
+      "to": "method:deep_copy",
+      "label": "calls"
+    },
+    {
+      "from": "action:read_index_datapoints#execute",
+      "to": "method:execute_behavior",
+      "label": "calls"
+    },
+    {
+      "from": "action:read_index_datapoints#output_fields",
+      "to": "method:telemetry_envelope_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:read_index_datapoints#output_fields",
+      "to": "method:get_behavior_output_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:upsert_index_datapoints#input_fields",
+      "to": "method:get_behavior_input_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:upsert_index_datapoints#execute",
+      "to": "method:deep_copy",
+      "label": "calls"
+    },
+    {
+      "from": "action:upsert_index_datapoints#execute",
+      "to": "method:execute_behavior",
+      "label": "calls"
+    },
+    {
+      "from": "action:upsert_index_datapoints#output_fields",
+      "to": "method:telemetry_envelope_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:upsert_index_datapoints#output_fields",
+      "to": "method:get_behavior_output_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:generate_embeddings#input_fields",
+      "to": "method:get_behavior_input_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:generate_embeddings#execute",
+      "to": "method:extract_user_config",
+      "label": "calls"
+    },
+    {
+      "from": "action:generate_embeddings#execute",
+      "to": "method:deep_copy",
+      "label": "calls"
+    },
+    {
+      "from": "action:generate_embeddings#execute",
+      "to": "method:execute_behavior",
+      "label": "calls"
+    },
+    {
+      "from": "action:generate_embeddings#output_fields",
+      "to": "method:telemetry_envelope_fields",
+      "label": "calls"
+    },
+    {
+      "from": "action:generate_embeddings#output_fields",
+      "to": "method:get_behavior_output_fields",
+      "label": "calls"
+    }
+  ]
+}

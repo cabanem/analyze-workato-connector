@@ -1,0 +1,127 @@
+{
+  "$id": "https://example.com/workato-connector-ir.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Workato Connector IR",
+  "version": "1-0-0",
+  "type": "object",
+  "required": [
+    "root",
+    "issues",
+    "graph",
+    "stats",
+    "salvaged"
+  ],
+  "properties": {
+    "root": {
+      "$ref": "#/definitions/node"
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/issue"
+      }
+    },
+    "graph": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "object"
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "array"
+          }
+        }
+      }
+    },
+    "stats": {
+      "type": "object"
+    },
+    "salvaged": {
+      "type": "boolean"
+    },
+    "lambdas": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "definitions": {
+    "loc": {
+      "type": "object",
+      "properties": {
+        "line": {
+          "type": "integer"
+        },
+        "column": {
+          "type": "integer"
+        },
+        "length": {
+          "type": "integer"
+        },
+        "begin": {
+          "type": "integer"
+        },
+        "end": {
+          "type": "integer"
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "loc",
+        "meta",
+        "children"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "loc": {
+          "$ref": "#/definitions/loc"
+        },
+        "meta": {
+          "type": "object"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/node"
+          }
+        }
+      }
+    },
+    "issue": {
+      "type": "object",
+      "properties": {
+        "severity": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "loc": {
+          "$ref": "#/definitions/loc"
+        },
+        "context": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

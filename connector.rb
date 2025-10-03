@@ -516,7 +516,7 @@
       # EXECUTE
       execute: lambda do |connection, input, _in_schema, _out_schema, config_fields|
         user_cfg = call('extract_user_config', input, config_fields['advanced_config'], config_fields)
-        safe     = call('deep_copy', input) # never mutate Workato’s input
+        safe     = call('deep_copy', input)
         call('execute_behavior', connection, 'text.classify', safe, user_cfg)
       end,
 
@@ -665,7 +665,8 @@
       end,
       # EXECUTE
       execute: lambda do |connection, input, _in_schema, _out_schema, _cfg|
-        call('execute_behavior', connection, 'vector.find_neighbors', call('deep_copy', input))
+        safe = call('deep_copy', input)
+        call('execute_behavior', connection, 'vector.find_neighbors', safe)
       end
     },
     read_index_datapoints: {
@@ -725,7 +726,8 @@
       end,
       # EXECUTE
       execute: lambda do |connection, input, _in_schema, _out_schema, _cfg|
-        call('execute_behavior', connection, 'vector.upsert_datapoints', call('deep_copy', input))
+        safe = call('deep_copy', input)
+        call('execute_behavior', connection, 'vector.upsert_datapoints', safe)
       end
     },
     # --- Embeddings
@@ -740,8 +742,6 @@
             ['Explicit (choose model below)', 'explicit'],
             ['Use connection default',        'connection'] ],
           hint: 'Switch to Explicit to pick an exact Vertex model for this step.', sticky: true, extends_schema: true },
-        # @note PATCH 2025-10-01-B added picklist params for picklist
-        # @note PATCH 2025-10-01-D removed ngIf, field behavior is configuration driven
         { name: 'model', label: 'Model', group: 'Model & tuning', control_type: 'select', optional: true, extends_schema: true,
           pick_list: 'models_dynamic_for_behavior', pick_list_params: { behavior: 'text.embed' }, toggle_hint: 'Select from list', 
           toggle_field: {  name: 'model', label: 'Model (custom id)', type: 'string', control_type: 'text', optional: true, toggle_hint: 'Provide custom value' } },
@@ -760,75 +760,10 @@
       end,
       # EXECUTE
       execute: lambda do |connection, input, _in_schema, _out_schema, config_fields|
-        texts = Array(input['texts'])
-        return { 'success' => false, 'error' => 'No texts provided' } if texts.empty?
-        
-        model = input['model'] || config_fields['model'] || 'text-embedding-004'
-        
-        # Build payload
-        payload = {
-          'instances' => texts.map { |text| 
-            { 'content' => text, 'task_type' => input['task_type'] || 'RETRIEVAL_DOCUMENT' }
-          }
-        }
-        
-        # Build URL
-        project = connection['project']
-        region = connection['region']
-        version = connection['version'] || 'v1'
-        url = "https://#{region}-aiplatform.googleapis.com/#{version}/projects/#{project}/locations/#{region}/publishers/google/models/#{model}:predict"
-        
-        # Use call('http_request') which handles auth properly
-        response = call('http_request',
-          connection,
-          method: 'POST',
-          url: url,
-          payload: payload,
-          headers: call('build_headers', connection),
-          retry_config: { max_attempts: 2, backoff: 1.0 }
-        )
-        
-        # Extract embeddings from response
-        predictions = Array(response['predictions'])
-        
-        embeddings = predictions.map do |pred|
-          values = nil
-          
-          if pred.is_a?(Hash)
-            # Try different paths
-            if pred['embeddings'].is_a?(Hash) && pred['embeddings']['values']
-              values = pred['embeddings']['values']
-            elsif pred['embeddings'].is_a?(Array)
-              values = pred['embeddings']
-            elsif pred['values'].is_a?(Array)
-              values = pred['values']
-            end
-          elsif pred.is_a?(Array)
-            values = pred
-          end
-          
-          values ? { 'values' => Array(values).map(&:to_f) } : nil
-        end.compact
-        
-        # Build output
-        {
-          'success' => true,
-          'timestamp' => Time.now.utc.iso8601,
-          'metadata' => {
-            'operation' => 'text.embed',
-            'model' => model
-          },
-          'embeddings' => embeddings,
-          'vectors' => embeddings.map { |e| { 'feature_vector' => e['values'] } },
-          'count' => embeddings.length,
-          'dimension' => embeddings.first ? embeddings.first['values'].length : 0
-        }
-end,
-      #execute: lambda do |connection, input, _in_schema, _out_schema, config_fields|
-       # user_cfg = call('extract_user_config', input, config_fields['advanced_config'], config_fields)
-        #safe     = call('deep_copy', input)
-        #call('execute_behavior', connection, 'text.embed', safe, user_cfg)
-      #end,
+        user_cfg = call('extract_user_config', input, config_fields['advanced_config'], config_fields)
+        safe     = call('deep_copy', input) # one copy at the action boundary
+        call('execute_behavior', connection, 'text.embed', safe, user_cfg)
+      end,
       # SAMPLE OUT
       sample_output: lambda do |_connection, _cfg|
         {
@@ -959,28 +894,43 @@ end,
 
       # Embedding
       when 'embedding'
-        texts = Array(variables['texts'])
-        # @note PATCH 2025-10-01-A enforced model constraint to fail appropriately
-        if variables['model'].to_s == 'gemini-embedding-001' && texts.length > 1
+        # Normalize and filter
+        texts = Array(variables['texts']).map { |t| t.to_s.strip }.reject(&:empty?)
+        error('No non-empty texts provided') if texts.empty?
+
+        # Enforce model-aware limits
+        model_id = variables['model'].to_s
+        max_per_request =
+          if model_id.start_with?('text-embedding-005') then 100
+          else 100 # safe default for older models as well
+          end
+        if texts.length > max_per_request
           corr = "#{Time.now.utc.to_i}-#{SecureRandom.hex(6)}"
-          error("gemini-embedding-001 supports one text per request. Received #{texts.length}. Split into multiple calls or use Batch. [corr_id=#{corr}]")
+          error("Too many texts for a single request (#{texts.length} > #{max_per_request}). Split the batch or use Batch AI Operation. [corr_id=#{corr}]")
         end
 
+        # Task/type normalization
+        task_type = variables['task_type'] || 'RETRIEVAL_DOCUMENT'
+        include_title = (task_type == 'RETRIEVAL_DOCUMENT')
+
+        # Build instances
         body = {
           'instances' => texts.map { |text|
-            {
-              'content'   => text,
-              'task_type' => variables['task_type'] || 'RETRIEVAL_DOCUMENT',
-              'title'     => variables['title']
-            }.compact
+            inst = { 'content' => text, 'task_type' => task_type }
+            inst['title'] = variables['title'] if include_title && variables['title']
+            inst
           }
         }
-        # @note PATCH 2025-10-01-C using helper so that nil and empty arrays/hashes are treated as not present
+
+        # Parameters
         params = {}
-        if call('value_present', variables['auto_truncate'])
+        supports_dimensionality = model_id.start_with?('text-embedding-005')
+        supports_auto_truncate  = supports_dimensionality || model_id.start_with?('textembedding-gecko')
+
+        if supports_auto_truncate && call('value_present', variables['auto_truncate'])
           params['autoTruncate'] = variables['auto_truncate']
         end
-        if call('value_present', variables['output_dimensionality'])
+        if supports_dimensionality && call('value_present', variables['output_dimensionality'])
           params['outputDimensionality'] = variables['output_dimensionality']
         end
         body['parameters'] = params unless params.empty?
@@ -1095,82 +1045,61 @@ end,
     # --- Response Extraction
     extract_response: lambda do |data:, path: nil, format: 'raw'|
       case format
-      # Raw data
+      # RAW
       when 'raw' then data
-      # Json field
+      # JSON_FIELD
       when 'json_field'
         return data unless path
         path.split('.').reduce(data) { |acc, seg| acc.is_a?(Array) && seg =~ /^\d+$/ ? acc[seg.to_i] : (acc || {})[seg] }
-      # Vertex text
+      # VERTEX_TEXT
       when 'vertex_text'
         parts = data.dig('candidates', 0, 'content', 'parts') || []
         text  = parts.select { |p| p['text'] }.map { |p| p['text'] }.join
         text.empty? ? data.dig('predictions', 0, 'content').to_s : text
-      # Vertex-flavored json
+      
+      # VERTEX_JSON
       when 'vertex_json'
         raw = (data.dig('candidates', 0, 'content', 'parts') || []).map { |p| p['text'] }.compact.join
         return {} if raw.nil? || raw.empty?
         m = raw.match(/```(?:json)?\s*(\{.*?\})\s*```/m) || raw.match(/\{.*\}/m)
         m ? (JSON.parse(m[1] || m[0]) rescue {}) : {}
+
+      # EMBEDDINGS  
       when 'embeddings'
-        call('debug_embedding_response', data) if defined?(ENV) # debug
-        # Support all observed Vertex shapes
+        # Normalize all known Vertex shapes to an array of Float arrays
         preds = Array(data['predictions'])
-        
+
         vectors = preds.map do |p|
-          if p.is_a?(Array)
-            # Direct array of values
-            p
-          elsif p.is_a?(Hash)
-            # Try multiple paths to find the embedding values
-            v = nil
-            
-            # Check for nested embeddings structure
-            if p['embeddings']
-              if p['embeddings'].is_a?(Array)
-                v = p['embeddings']
-              elsif p['embeddings'].is_a?(Hash) && p['embeddings']['values']
-                v = p['embeddings']['values']
-              elsif p['embeddings'].is_a?(Hash) && p['embeddings']['statistics']
-                # Some models return statistics wrapper
-                v = p['embeddings']['statistics']['values'] || p['embeddings']['statistics']['embedding']
-              end
-            end
-            
-            # Fallback to other possible paths
-            v ||= p.dig('embedding', 'values') ||
-                  (p['embedding'] if p['embedding'].is_a?(Array)) ||
-                  p['denseEmbedding'] ||
-                  p['values']
-            
-            # Ensure we have an array
-            v = Array(v) if v && !v.is_a?(Array)
-            v
+          next p if p.is_a?(Array) && p.all? { |x| x.is_a?(Numeric) } # raw numeric array
+
+          next unless p.is_a?(Hash)
+          v = nil
+
+          emb = p['embeddings'] || p['embedding']
+
+          # Preferred: { "embeddings": { "values": [...] } }
+          if emb.is_a?(Hash) && emb['values'].is_a?(Array)
+            v = emb['values']
+
+          # Sometimes: { "embeddings": [ { "values": [...] } ] }
+          elsif emb.is_a?(Array) && emb.first.is_a?(Hash) && emb.first['values'].is_a?(Array)
+            v = emb.first['values']
+
+          # Legacy: { "embeddings": [ ...numbers... ] } OR { "embedding": [ ...numbers... ] }
+          elsif emb.is_a?(Array) && emb.first.is_a?(Numeric)
+            v = emb
+
+          # Fallbacks occasionally seen in older/experimental endpoints
+          elsif p['denseEmbedding'].is_a?(Array)
+            v = p['denseEmbedding']
+          elsif p['values'].is_a?(Array)
+            v = p['values']
           end
-        end.reject { |v| v.nil? || v.empty? }  # Changed from .compact to be more explicit
-        
-        # Return empty array if no valid vectors found
-        vectors.empty? ? [] : vectors
-      # Embeddings
-      when 'formerly-embeddings'
-        # Support all observed Vertex shapes:
-        #  1) predictions[].embeddings.values     (object -> values)
-        #  2) predictions[].embeddings            (array directly)
-        #  3) predictions[].embedding             (singular, array)
-        preds = Array(data['predictions'])
-        vectors = preds.map do |p|
-          if p.is_a?(Array)
-            p
-          elsif p.is_a?(Hash)
-            v = p.dig('embeddings', 'values') ||
-                (p['embeddings'] if p['embeddings'].is_a?(Array)) ||
-                p.dig('embedding', 'values') ||
-                (p['embedding'] if p['embedding'].is_a?(Array)) ||
-                p['denseEmbedding'] ||
-                p['values']
-            v
-          end
+
+          # Only accept a clean numeric vector
+          (v.is_a?(Array) && v.all? { |x| x.is_a?(Numeric) }) ? v : nil
         end.compact
+
         vectors
       else data
       end
@@ -1460,13 +1389,11 @@ end,
 
     # ------ LAYER 2: UNIVERSAL PIPELINE -----------------------
     execute_pipeline: lambda do |connection, operation, input, config|
-      # PATCH 2025-10-02-A
       # Recursion guard
       @pipeline_depth ||= 0
       @pipeline_depth += 1
       error("Pipeline recursion detected!") if @pipeline_depth > 3
-      # Don't mutate the input
-      local = call('deep_copy', input)
+      local = input
 
       # 1. Validate
       if config['validate']
@@ -1492,7 +1419,6 @@ end,
       end
 
       # -- Ensure selected model from ops config is visible to URL builder
-      # @note PATCH 2025-10-01-C using helper so that nil and empty arrays/hashes are treated as not present
       local['model'] = config['model'] unless call('value_present', local['model'])
 
       # 3. Build payload
@@ -1690,8 +1616,8 @@ end,
             'temperature' => 0.1
           }
         },
+
         # Embedding Operations
-        #
         'text.embed' => {
           description: 'Generate text embeddings',
           capability: 'embedding',
@@ -1701,7 +1627,7 @@ end,
           config_template: {
             'validate' => {
               'schema' => [ { 'name' => 'texts', 'required' => true } ],
-              'constraints' => [ { 'type' => 'max_items', 'field' => 'texts', 'value' => 250 } ]
+              'constraints' => [ { 'type' => 'max_items', 'field' => 'texts', 'value' => 100 } ]
             },
             'payload' => { 'format' => 'embedding' },
             'endpoint' => { 'path' => ':predict', 'method' => 'POST' },
@@ -1873,96 +1799,9 @@ end,
     end,
     
     # --- Main execution method combining all layers
-    execute_behavior_old: lambda do |connection, behavior, input, user_config = {}|
-      behavior_def = call('behavior_registry')[behavior] or error("Unknown behavior: #{behavior}")
-      local_input = call('deep_copy', input) # Work on a local copy only
-
-      # Apply defaults without side effects
-      if behavior_def[:defaults]
-        behavior_def[:defaults].each { |k, v| local_input[k] = local_input.key?(k) ? local_input[k] : v }
-      end
-
-      # Bring model-selection keys into local_input so select_model can use them
-      %w[model model_mode lock_model_revision].each do |k|
-        if user_config.key?(k) && !user_config[k].nil?
-          local_input[k] = user_config[k]
-        end
-      end      
-
-      cfg = call('configuration_registry', connection, user_config)
-      operation_config = JSON.parse(JSON.dump(behavior_def[:config_template] || {})) # build op config from template
-
-      # Bring generation settings into the local input (don’t mutate cfg)
-      if cfg[:generation]
-        cfg[:generation].each { |k, v| local_input[k] = v unless v.nil? }
-      end
-
-      operation_config['model'] = call('select_model', behavior_def, cfg, local_input)
-
-      # @note PATCH 2025-10-01-B add breadcrumb to troubleshoot model selection
-      selection_mode = (local_input['model_mode'] || cfg.dig(:models, :mode) || 'auto').to_s
-      strategy       = (cfg.dig(:models, :strategy) || 'balanced').to_s
-      explicit_in    = user_config['model']
-
-
-      # @note PATCH 2025-10-01-A forcing sane fallback rather than issuing a bad :predict call
-      if behavior_def[:supported_models].any? && !behavior_def[:supported_models].include?(operation_config['model'])
-        # @note PATCH 2025-10-01-C Re-select while ignoring any explicit/override model that may have been carried along
-        scrubbed = call('deep_copy', local_input)
-        scrubbed.delete('model')
-        scrubbed.delete('model_override')
-        operation_config['model'] = call('select_model', behavior_def, cfg, scrubbed.merge('model_mode' => 'auto'))
-      end
-
-      operation_config['resilience'] = cfg[:execution]
-
-      # Caching key is derived from local_input
-      if cfg[:features][:caching][:enabled]
-        cache_key = "vertex_#{behavior}_#{local_input.to_json.hash}"
-        if (hit = call('memo_get', cache_key))
-          return hit
-        end
-      end
-
-      pmode = (local_input['prompt_mode'] || 'simple').to_s
-      case pmode
-      when 'contents'
-        operation_config['payload']   = { 'format' => 'vertex_contents' }
-        operation_config['validate']  = { 'schema' => [ { 'name' => 'contents', 'required' => true } ] }
-      when 'raw_json'
-        operation_config['payload']   = { 'format' => 'vertex_passthrough' }
-        operation_config['validate']  = { 'schema' => [ { 'name' => 'payload_json', 'required' => true } ] }
-      else
-        # keep the config_template default ('vertex_prompt')
-      end
-
-      # Gate index discovery
-      if behavior == 'vector.find_neighbors'
-        local_input = call('augment_vector_context', connection, local_input)
-      end
-
-      result = call('execute_pipeline', connection, behavior, local_input, operation_config)
-
-      # @note PATCH 2025-10-01-B enforce breadcrumbs
-      if result.is_a?(Hash) && result['trace'].is_a?(Hash)
-        result['trace']['model_selection'] = {
-          'mode'            => selection_mode,        # auto / explicit / connection
-          'strategy'        => strategy,             # balanced / cost / performance
-          'explicit_model'  => explicit_in,          # what the user asked for
-          'effective_model' => operation_config['model'] # what we used
-        }.compact
-      end
-
-      if cfg[:features][:caching][:enabled]
-        call('memo_put', cache_key, result, cfg[:features][:caching][:ttl] || 300)
-      end
-
-      result
-    end,
-
     execute_behavior: lambda do |connection, behavior, input, user_config = {}|
       behavior_def = call('behavior_registry')[behavior] or error("Unknown behavior: #{behavior}")
-      local_input = call('deep_copy', input)
+      local_input = input # @note PATCH 2025-10-03-A assume input deep copied at action boundary
 
       # Apply defaults without side effects
       if behavior_def[:defaults]
@@ -1988,7 +1827,7 @@ end,
 
       # Force correct model if needed
       if behavior_def[:supported_models].any? && !behavior_def[:supported_models].include?(operation_config['model'])
-        scrubbed = call('deep_copy', local_input)
+        scrubbed = call('deep_copy', local_input) # @note deep_copy here, but also deleting - should resolve over alloc
         scrubbed.delete('model')
         scrubbed.delete('model_override')
         operation_config['model'] = call('select_model', behavior_def, cfg, scrubbed.merge('model_mode' => 'auto'))
@@ -1996,8 +1835,13 @@ end,
 
       operation_config['resilience'] = cfg[:execution]
 
-      # CRITICAL DEBUG: For embeddings, let's trace the actual pipeline execution
-      if behavior == 'text.embed'
+      # Embedding
+      # Guard against global region for embeddings
+      if behavior == 'text.embed' && connection['region'].to_s == 'global'
+        error("Embeddings are typically not served from the 'global' location. Choose a concrete region like 'us-central1'.")
+      end
+
+      if behavior == 'text.embed' && connection['enable_logging'] == true
         # Log what we're about to execute
         debug_info = {
           'input_texts' => local_input['texts'],
@@ -2009,17 +1853,12 @@ end,
         result = call('execute_pipeline', connection, behavior, local_input, operation_config)
         
         # Check if result has actual data
-        debug_result = {
-          'pipeline_result' => result,
-          'has_result' => !result.nil?,
-          'result_keys' => result.is_a?(Hash) ? result.keys : nil,
-          'result_class' => result.class.name
-        }
-        
-        # Return debug info along with result
-        if result.is_a?(Hash) && !result['DEBUG_INFO']
-          result['DEBUG_INFO'] = {
-            'input' => debug_info,
+        if result.is_a?(Hash)
+          debug_result = call('deep_copy', result)
+
+          result['trace'] ||= {}
+          result['trace']['debug'] = {
+            'input'  => debug_info,
             'output' => debug_result
           }
         end
@@ -2117,7 +1956,8 @@ end,
     end,
 
     augment_vector_context: lambda do |connection, local_input|
-      out = call('deep_copy', local_input)
+      # @note PATCH 2025-10-03-A assume input deep copied at action boundary
+      out = local_input
       need_metric = !call('value_present', out['distance_metric'])
       need_norm   = !call('value_present', out['feature_norm_type'])
       return out unless need_metric || need_norm
@@ -2509,7 +2349,8 @@ end,
       errors = []
       total_processed = 0
 
-      local_items = call('deep_copy', Array(items))
+      # @note PATCH 2025-10-03-A assume input deep copied at action boundary
+      local_items = Array(items)
       
       # 1) Build batches according to strategy
       batches =
@@ -3175,6 +3016,7 @@ end,
       []
     end,
 
+    
     # RETRY HELPER
     parse_retry_after: lambda do |headers|
       return nil unless headers

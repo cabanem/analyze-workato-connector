@@ -1,0 +1,270 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Workato Connector Inspector",
+          "informationUri": "https://github.com/workato/workato-connector-sdk",
+          "rules": [
+            {
+              "id": "dynamic_call",
+              "name": "dynamic_call"
+            },
+            {
+              "id": "unused_method",
+              "name": "unused_method"
+            },
+            {
+              "id": "method_cycle",
+              "name": "method_cycle"
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "dynamic_call",
+          "level": "warning",
+          "message": {
+            "text": "Dynamic method dispatch via call(send) in method:execute_pipeline"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 1477,
+                  "startColumn": 20
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.debug_embedding_response is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.add_upsert_ack is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.add_word_count is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.augment_vector_context is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.coerce_kwargs is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.normalize_find_neighbors is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.normalize_read_index_datapoints is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.to_query is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.wrap_embeddings_vectors_v1 is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unused_method",
+          "level": "note",
+          "message": {
+            "text": "methods.wrap_embeddings_vectors is never called"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 0,
+                  "startColumn": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "method_cycle",
+          "level": "error",
+          "message": {
+            "text": "methods cycle: list_publisher_models → resolve_model_version → build_endpoint_url → list_publisher_models"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "connector.rb"
+                },
+                "region": {
+                  "startLine": 2848,
+                  "startColumn": 12
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

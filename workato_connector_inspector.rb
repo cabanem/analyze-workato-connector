@@ -941,9 +941,10 @@ end
 # ------------------------------ Emitters -------------------------------------
 
 class Emit
-  def self.write_all(bundle:, outdir:, base:, pretty:, graph_name:, ndjson:, source: nil, emit: [])
+  def self.write_all(bundle:, outdir:, base:, pretty:, graph_name:,
+                     ndjson:, source: nil, emit: [], ai_pack: true, 
+                     max_context_bytes: 12000)
     Dir.mkdir(outdir) unless Dir.exist?(outdir)
-
     paths = {}
 
     # JSON
@@ -967,7 +968,6 @@ class Emit
           edges: bundle.graph.edges.to_a.map { |from, to, meta| { from: from, to: to, **(meta || {}) } } }, pretty)
     end
 
-
     # Markdown summary
     if emit.include?('md')
       paths[:md] = write_text(
@@ -975,7 +975,6 @@ class Emit
         Emit.markdown_summary(bundle)
       )
     end
-
 
     # NDJSON events (issues + http calls)
     if ndjson && emit.include?('ndjson')
@@ -1028,11 +1027,84 @@ class Emit
     # JSON Schema for IR (coarse, versioned)
     paths[:schema] = write_json(
       File.join(outdir, Util.safe_filename("#{base}.schema", '.json')), ir_schema(version: "1-0-0"), true) if emit.include?('schema')
-
+    
     # Index
     paths[:index] = write_json(
       File.join(outdir, Util.safe_filename("#{base}.index", '.json')), { artifacts: paths.compact }, true) if emit.include?('index')
+
+    # AI Pack
+    if ai_pack && source && bundle.root
+      paths[:gemini_context] = write_ndjson(File.join(outdir, Util.safe_filename("#{base}.gemini.context", '.jsonl'))) do |f|
+        enumerate_atoms(bundle).each do |atom|
+          next unless atom[:kind] =~ /\A(action|trigger|method|lambda)\z/
+          text = Util.slice_source(source, atom[:loc], max_bytes: max_context_bytes)
+          next unless text && !text.empty?
+          ctx = {
+            id: atom[:id], kind: atom[:kind], role: role_of(atom),
+            fqname: atom[:fqname], loc: atom[:loc], file: atom[:file],
+            http: atom[:http], keys: atom[:keys], text: text, doc: nil
+          }
+          f.puts(JSON.dump(ctx))
+        end
+      end
+
+      # Verex Upsert
+      paths[:vertex_upsert] = write_ndjson(File.join(outdir, Util.safe_filename("#{base}.vertex.upsert", '.jsonl'))) do |f|
+        enumerate_atoms(bundle).each do |atom|
+          next unless atom[:kind] =~ /\A(action|trigger|method|lambda)\z/
+          text = Util.slice_source(source, atom[:loc], max_bytes: max_context_bytes)
+          next unless text && !text.empty?
+          up = {
+            id: atom[:id],
+            namespace: "workato-connectors",
+            doc_id: File.basename(atom[:file].to_s),
+            section: atom[:fqname],
+            text: text,
+            metadata: {
+              kind: atom[:kind], role: role_of(atom),
+              http_verbs: atom.dig(:http, :verbs),
+              endpoints:  atom.dig(:http, :endpoints),
+              loc: atom[:loc],
+              model_suggested_token_count: text.length / 4
+            }
+          }
+          f.puts(JSON.dump(up))
+        end
+      end
+
+      # Gemini prompts
+      paths[:gemini_prompts] = write_text(File.join(outdir, Util.safe_filename("#{base}.gemini.prompts", '.md')),
+        default_prompts_md)
+      end
+
     paths
+  end
+
+  def self.role_of(atom)
+    # Map fqname suffix to a simple role for prompting
+    if atom[:fqname]&.include?('#')
+      atom[:fqname].split('#').last
+    else
+      atom[:name] || 'unknown'
+    end
+  end
+
+  def self.default_prompts_md
+    <<~MD
+    # Gemini Prompt Templates for Workato Connectors
+    ## 1) Summarize the connector
+    System: You are analyzing a Workato custom connector. Be precise; cite line numbers.
+    User: Given these context blocks (each has file, loc), produce: (a) purpose, (b) list of actions/triggers, (c) HTTP inventory, (d) missing SDK-required keys.
+    Provide a JSON object with fields: purpose, actions[], triggers[], http[], issues[].
+
+    ## 2) Explain one action's IO contract
+    System: You are analyzing Workato `actions.<name>`.
+    User: Using the context blocks tagged role=execute|input_fields|output_fields for <name>, summarize inputs/outputs and any validations. JSON fields: inputs[], outputs[], validations[], notes[].
+
+    ## 3) Risk scan
+    System: Identify dangerous calls (eval, system, backticks) and missing `dedup` in triggers.
+    User: Output JSON: { "danger":[], "missing_required":[], "webhook_notes":[] } with file+line per item.
+    MD
   end
 
   def self.enumerate_atoms(bundle)
@@ -1275,10 +1347,13 @@ class CLI
       end
 
     # 4) Emit
-    Emit.write_all(bundle: bundle, outdir: options[:outdir], base: options[:base], pretty: options[:pretty], graph_name: options[:graph_name],
+    Emit.write_all(bundle: bundle, outdir: options[:outdir], base: options[:base], 
+      pretty: options[:pretty],
+      graph_name: options[:graph_name],
       ndjson: options[:emit].include?('ndjson'),
       source: source,
-      emit: options[:emit])
+      emit: options[:emit], 
+      ai_pack: true)
 
     # 5) Selectively print summary path for convenience
     puts "Wrote outputs to #{options[:outdir]}"

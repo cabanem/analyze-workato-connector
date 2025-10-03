@@ -1,0 +1,827 @@
+{
+  "n_f3bcb34adb8926a4": {
+    "kind": "connector",
+    "name": "Vertex AI",
+    "loc": {
+      "line": 1,
+      "column": 0,
+      "length": 148847,
+      "begin": 0,
+      "end": 148847
+    }
+  },
+  "n_4bce2f0180140b0e": {
+    "kind": "connection",
+    "name": "connection",
+    "loc": {
+      "line": 8,
+      "column": 14,
+      "length": 9433,
+      "begin": 223,
+      "end": 9656
+    }
+  },
+  "n_535e73b867d9d963": {
+    "kind": "test",
+    "name": "test",
+    "loc": {
+      "line": 224,
+      "column": 8,
+      "length": 758,
+      "begin": 9669,
+      "end": 10427
+    }
+  },
+  "n_c1e17c41cf1cfd7d": {
+    "kind": "methods",
+    "name": "methods",
+    "loc": {
+      "line": 788,
+      "column": 11,
+      "length": 104068,
+      "begin": 37534,
+      "end": 141602
+    }
+  },
+  "n_368592796c4c03f6": {
+    "kind": "method",
+    "name": "build_payload",
+    "loc": {
+      "line": 791,
+      "column": 19,
+      "length": 9158,
+      "begin": 37647,
+      "end": 46805
+    }
+  },
+  "n_f1205e4be60792f8": {
+    "kind": "method",
+    "name": "enrich_response",
+    "loc": {
+      "line": 1019,
+      "column": 21,
+      "length": 1193,
+      "begin": 46935,
+      "end": 48128
+    }
+  },
+  "n_4d048a6e9a632a44": {
+    "kind": "method",
+    "name": "extract_response",
+    "loc": {
+      "line": 1046,
+      "column": 22,
+      "length": 2238,
+      "begin": 48183,
+      "end": 50421
+    }
+  },
+  "n_88da4b7527155a27": {
+    "kind": "method",
+    "name": "http_request",
+    "loc": {
+      "line": 1109,
+      "column": 18,
+      "length": 3959,
+      "begin": 50475,
+      "end": 54434
+    }
+  },
+  "n_b5f3f5bb33a4ffa4": {
+    "kind": "method",
+    "name": "transform_data",
+    "loc": {
+      "line": 1202,
+      "column": 20,
+      "length": 1056,
+      "begin": 54487,
+      "end": 55543
+    }
+  },
+  "n_c4a333c702c12a63": {
+    "kind": "method",
+    "name": "validate_input",
+    "loc": {
+      "line": 1230,
+      "column": 20,
+      "length": 4327,
+      "begin": 55597,
+      "end": 59924
+    }
+  },
+  "n_afe744327b8914a0": {
+    "kind": "method",
+    "name": "with_resilience",
+    "loc": {
+      "line": 1335,
+      "column": 21,
+      "length": 2187,
+      "begin": 59977,
+      "end": 62164
+    }
+  },
+  "n_8bb1e821495d603e": {
+    "kind": "method",
+    "name": "execute_pipeline",
+    "loc": {
+      "line": 1391,
+      "column": 22,
+      "length": 3528,
+      "begin": 62255,
+      "end": 65783
+    }
+  },
+  "n_6c90238a11b665e1": {
+    "kind": "method",
+    "name": "behavior_registry",
+    "loc": {
+      "line": 1501,
+      "column": 23,
+      "length": 10076,
+      "begin": 65929,
+      "end": 76005
+    }
+  },
+  "n_68eb76aaa56522de": {
+    "kind": "method",
+    "name": "configuration_registry",
+    "loc": {
+      "line": 1760,
+      "column": 28,
+      "length": 1079,
+      "begin": 76092,
+      "end": 77171
+    }
+  },
+  "n_aa61e1994b4106be": {
+    "kind": "method",
+    "name": "execute_behavior",
+    "loc": {
+      "line": 1802,
+      "column": 22,
+      "length": 3631,
+      "begin": 77253,
+      "end": 80884
+    }
+  },
+  "n_7b41fee00ddc673c": {
+    "kind": "method",
+    "name": "debug_embedding_response",
+    "loc": {
+      "line": 1897,
+      "column": 30,
+      "length": 673,
+      "begin": 80996,
+      "end": 81669
+    }
+  },
+  "n_eee95286c4553375": {
+    "kind": "method",
+    "name": "add_upsert_ack",
+    "loc": {
+      "line": 1916,
+      "column": 20,
+      "length": 320,
+      "begin": 81721,
+      "end": 82041
+    }
+  },
+  "n_a36d39ac7d8c40c2": {
+    "kind": "method",
+    "name": "add_word_count",
+    "loc": {
+      "line": 1927,
+      "column": 20,
+      "length": 290,
+      "begin": 82064,
+      "end": 82354
+    }
+  },
+  "n_9cff7eca6a4c75ed": {
+    "kind": "method",
+    "name": "apply_template",
+    "loc": {
+      "line": 1942,
+      "column": 20,
+      "length": 238,
+      "begin": 82408,
+      "end": 82646
+    }
+  },
+  "n_9d2cd866f737081e": {
+    "kind": "method",
+    "name": "approx_token_count",
+    "loc": {
+      "line": 1953,
+      "column": 24,
+      "length": 107,
+      "begin": 82708,
+      "end": 82815
+    }
+  },
+  "n_08206b37c962f7c5": {
+    "kind": "method",
+    "name": "augment_vector_context",
+    "loc": {
+      "line": 1958,
+      "column": 28,
+      "length": 769,
+      "begin": 82846,
+      "end": 83615
+    }
+  },
+  "n_ed73c01864b4988d": {
+    "kind": "method",
+    "name": "build_endpoint_url",
+    "loc": {
+      "line": 1979,
+      "column": 24,
+      "length": 3200,
+      "begin": 83667,
+      "end": 86867
+    }
+  },
+  "n_c9c3b33a64d18adb": {
+    "kind": "method",
+    "name": "build_generation_config",
+    "loc": {
+      "line": 2044,
+      "column": 29,
+      "length": 559,
+      "begin": 86991,
+      "end": 87550
+    }
+  },
+  "n_61a5c776d99be350": {
+    "kind": "method",
+    "name": "build_headers",
+    "loc": {
+      "line": 2055,
+      "column": 19,
+      "length": 147,
+      "begin": 87600,
+      "end": 87747
+    }
+  },
+  "n_a03fa7e7b462817c": {
+    "kind": "method",
+    "name": "check_rate_limit",
+    "loc": {
+      "line": 2063,
+      "column": 22,
+      "length": 661,
+      "begin": 87792,
+      "end": 88453
+    }
+  },
+  "n_6185140d0756b8bf": {
+    "kind": "method",
+    "name": "chunk_by_tokens",
+    "loc": {
+      "line": 2081,
+      "column": 21,
+      "length": 1696,
+      "begin": 88477,
+      "end": 90173
+    }
+  },
+  "n_ff0b2aa2fcd8d222": {
+    "kind": "method",
+    "name": "coerce_embeddings_to_datapoints",
+    "loc": {
+      "line": 2136,
+      "column": 37,
+      "length": 1241,
+      "begin": 90277,
+      "end": 91518
+    }
+  },
+  "n_1601b3725eadd6d8": {
+    "kind": "method",
+    "name": "coerce_kwargs",
+    "loc": {
+      "line": 2168,
+      "column": 19,
+      "length": 886,
+      "begin": 91540,
+      "end": 92426
+    }
+  },
+  "n_2b1d3195806793f4": {
+    "kind": "method",
+    "name": "confidence_from_distance",
+    "loc": {
+      "line": 2195,
+      "column": 30,
+      "length": 615,
+      "begin": 92463,
+      "end": 93078
+    }
+  },
+  "n_d9d99d96cdc4ca7c": {
+    "kind": "method",
+    "name": "deep_copy",
+    "loc": {
+      "line": 2216,
+      "column": 15,
+      "length": 43,
+      "begin": 93126,
+      "end": 93169
+    }
+  },
+  "n_8e4ee8f78693443a": {
+    "kind": "method",
+    "name": "discover_index_config",
+    "loc": {
+      "line": 2218,
+      "column": 27,
+      "length": 1500,
+      "begin": 93199,
+      "end": 94699
+    }
+  },
+  "n_c9d591a5046c75b4": {
+    "kind": "method",
+    "name": "each_in_scope",
+    "loc": {
+      "line": 2252,
+      "column": 19,
+      "length": 273,
+      "begin": 94793,
+      "end": 95066
+    }
+  },
+  "n_ee074dafdc126b52": {
+    "kind": "method",
+    "name": "error_hint",
+    "loc": {
+      "line": 2264,
+      "column": 16,
+      "length": 565,
+      "begin": 95104,
+      "end": 95669
+    }
+  },
+  "n_bfc1dcfb92ab1185": {
+    "kind": "method",
+    "name": "extract_ids_for_read",
+    "loc": {
+      "line": 2281,
+      "column": 26,
+      "length": 984,
+      "begin": 95698,
+      "end": 96682
+    }
+  },
+  "n_5af4f46fd7251302": {
+    "kind": "method",
+    "name": "extract_user_config",
+    "loc": {
+      "line": 2308,
+      "column": 25,
+      "length": 1634,
+      "begin": 96750,
+      "end": 98384
+    }
+  },
+  "n_ca2eb35de7bfa067": {
+    "kind": "method",
+    "name": "execute_batch_behavior",
+    "loc": {
+      "line": 2347,
+      "column": 28,
+      "length": 2729,
+      "begin": 98439,
+      "end": 101168
+    }
+  },
+  "n_506961ae945e2030": {
+    "kind": "method",
+    "name": "format_user_error",
+    "loc": {
+      "line": 2421,
+      "column": 23,
+      "length": 400,
+      "begin": 101215,
+      "end": 101615
+    }
+  },
+  "n_bd5be9b3a58c4169": {
+    "kind": "method",
+    "name": "get_behavior_input_fields",
+    "loc": {
+      "line": 2433,
+      "column": 31,
+      "length": 19718,
+      "begin": 101693,
+      "end": 121411
+    }
+  },
+  "n_85d5f57d69fa146f": {
+    "kind": "method",
+    "name": "get_behavior_output_fields",
+    "loc": {
+      "line": 2751,
+      "column": 32,
+      "length": 3528,
+      "begin": 121483,
+      "end": 125011
+    }
+  },
+  "n_7493453b9263ee8a": {
+    "kind": "method",
+    "name": "list_publisher_models",
+    "loc": {
+      "line": 2839,
+      "column": 27,
+      "length": 758,
+      "begin": 125086,
+      "end": 125844
+    }
+  },
+  "n_db87fa15e249d65e": {
+    "kind": "method",
+    "name": "memo_store",
+    "loc": {
+      "line": 2858,
+      "column": 16,
+      "length": 25,
+      "begin": 125863,
+      "end": 125888
+    }
+  },
+  "n_922c8848841618cf": {
+    "kind": "method",
+    "name": "memo_get",
+    "loc": {
+      "line": 2860,
+      "column": 14,
+      "length": 178,
+      "begin": 125905,
+      "end": 126083
+    }
+  },
+  "n_c41f9c08ea43f3c3": {
+    "kind": "method",
+    "name": "memo_put",
+    "loc": {
+      "line": 2868,
+      "column": 14,
+      "length": 145,
+      "begin": 126100,
+      "end": 126245
+    }
+  },
+  "n_459d64eed23df3ca": {
+    "kind": "method",
+    "name": "normalize_find_neighbors",
+    "loc": {
+      "line": 2874,
+      "column": 30,
+      "length": 2416,
+      "begin": 126354,
+      "end": 128770
+    }
+  },
+  "n_1a3db9579288aabc": {
+    "kind": "method",
+    "name": "normalize_http_error",
+    "loc": {
+      "line": 2932,
+      "column": 26,
+      "length": 1256,
+      "begin": 128799,
+      "end": 130055
+    }
+  },
+  "n_390bd043b12321b7": {
+    "kind": "method",
+    "name": "normalize_read_index_datapoints",
+    "loc": {
+      "line": 2971,
+      "column": 37,
+      "length": 704,
+      "begin": 130095,
+      "end": 130799
+    }
+  },
+  "n_8c91b21d7ef44653": {
+    "kind": "method",
+    "name": "normalize_safety_settings",
+    "loc": {
+      "line": 2988,
+      "column": 31,
+      "length": 1080,
+      "begin": 130865,
+      "end": 131945
+    }
+  },
+  "n_5096942698d58393": {
+    "kind": "method",
+    "name": "parse_retry_after",
+    "loc": {
+      "line": 3021,
+      "column": 23,
+      "length": 257,
+      "begin": 131995,
+      "end": 132252
+    }
+  },
+  "n_56d620eb5198952b": {
+    "kind": "method",
+    "name": "qualify_resource",
+    "loc": {
+      "line": 3030,
+      "column": 22,
+      "length": 415,
+      "begin": 132357,
+      "end": 132772
+    }
+  },
+  "n_9a2ec3495dfd9ed2": {
+    "kind": "method",
+    "name": "resolve_model_version",
+    "loc": {
+      "line": 3043,
+      "column": 27,
+      "length": 613,
+      "begin": 132936,
+      "end": 133549
+    }
+  },
+  "n_a34a2384d8963081": {
+    "kind": "method",
+    "name": "retryable_http_code",
+    "loc": {
+      "line": 3060,
+      "column": 25,
+      "length": 78,
+      "begin": 133596,
+      "end": 133674
+    }
+  },
+  "n_04795dcea6e17a00": {
+    "kind": "method",
+    "name": "safe_mean",
+    "loc": {
+      "line": 3064,
+      "column": 15,
+      "length": 120,
+      "begin": 133692,
+      "end": 133812
+    }
+  },
+  "n_29a9c281083943f9": {
+    "kind": "method",
+    "name": "select_model",
+    "loc": {
+      "line": 3071,
+      "column": 18,
+      "length": 2188,
+      "begin": 133861,
+      "end": 136049
+    }
+  },
+  "n_e206a19f2b6e8cd0": {
+    "kind": "method",
+    "name": "telemetry_envelope_fields",
+    "loc": {
+      "line": 3116,
+      "column": 31,
+      "length": 325,
+      "begin": 136131,
+      "end": 136456
+    }
+  },
+  "n_28b5a4f546a28f4f": {
+    "kind": "method",
+    "name": "trace_fields",
+    "loc": {
+      "line": 3126,
+      "column": 18,
+      "length": 525,
+      "begin": 136476,
+      "end": 137001
+    }
+  },
+  "n_c63923f62e968f33": {
+    "kind": "method",
+    "name": "to_query",
+    "loc": {
+      "line": 3143,
+      "column": 14,
+      "length": 579,
+      "begin": 137060,
+      "end": 137639
+    }
+  },
+  "n_a4e7fd6a15c44f51": {
+    "kind": "method",
+    "name": "value_present",
+    "loc": {
+      "line": 3166,
+      "column": 19,
+      "length": 174,
+      "begin": 137725,
+      "end": 137899
+    }
+  },
+  "n_09b095a563e872cc": {
+    "kind": "method",
+    "name": "vector_search_base",
+    "loc": {
+      "line": 3174,
+      "column": 24,
+      "length": 653,
+      "begin": 138011,
+      "end": 138664
+    }
+  },
+  "n_fc47d3c26be29eec": {
+    "kind": "method",
+    "name": "wrap_embeddings_vectors_v1",
+    "loc": {
+      "line": 3193,
+      "column": 32,
+      "length": 787,
+      "begin": 138855,
+      "end": 139642
+    }
+  },
+  "n_b1794f2e8f430e96": {
+    "kind": "method",
+    "name": "wrap_embeddings_vectors",
+    "loc": {
+      "line": 3218,
+      "column": 29,
+      "length": 1884,
+      "begin": 139713,
+      "end": 141597
+    }
+  },
+  "n_93381d7943e64a02": {
+    "kind": "object_definitions",
+    "name": "object_definitions",
+    "loc": {
+      "line": 3452,
+      "column": 22,
+      "length": 1145,
+      "begin": 147249,
+      "end": 148394
+    }
+  },
+  "n_71a5bd1994c5e13b": {
+    "kind": "object_definition",
+    "name": "generation_config",
+    "loc": {
+      "line": 3453,
+      "column": 23,
+      "length": 641,
+      "begin": 147274,
+      "end": 147915
+    }
+  },
+  "n_b1e0d892cd66d17b": {
+    "kind": "object_definition",
+    "name": "safety_settings",
+    "loc": {
+      "line": 3464,
+      "column": 21,
+      "length": 452,
+      "begin": 147938,
+      "end": 148390
+    }
+  },
+  "n_44aa1fb45b95b3e7": {
+    "kind": "actions",
+    "name": "actions",
+    "loc": {
+      "line": 249,
+      "column": 11,
+      "length": 26745,
+      "begin": 10633,
+      "end": 37378
+    }
+  },
+  "n_d147c2a163b2bb83": {
+    "kind": "action",
+    "name": "batch_operation",
+    "loc": {
+      "line": 253,
+      "column": 21,
+      "length": 4210,
+      "begin": 10745,
+      "end": 14955
+    }
+  },
+  "n_92c7f30afd71dba6": {
+    "kind": "action",
+    "name": "vertex_operation",
+    "loc": {
+      "line": 355,
+      "column": 22,
+      "length": 5118,
+      "begin": 15002,
+      "end": 20120
+    }
+  },
+  "n_7533d161968112b3": {
+    "kind": "action",
+    "name": "discover_index_config",
+    "loc": {
+      "line": 444,
+      "column": 27,
+      "length": 1610,
+      "begin": 20242,
+      "end": 21852
+    }
+  },
+  "n_eecaaabaf36357ce": {
+    "kind": "action",
+    "name": "classify_text",
+    "loc": {
+      "line": 484,
+      "column": 19,
+      "length": 2645,
+      "begin": 21888,
+      "end": 24533
+    }
+  },
+  "n_fcdab0af46f7bbb0": {
+    "kind": "action",
+    "name": "generate_text",
+    "loc": {
+      "line": 535,
+      "column": 19,
+      "length": 6542,
+      "begin": 24554,
+      "end": 31096
+    }
+  },
+  "n_a2583dc40c2af269": {
+    "kind": "action",
+    "name": "find_neighbors",
+    "loc": {
+      "line": 655,
+      "column": 20,
+      "length": 690,
+      "begin": 31142,
+      "end": 31832
+    }
+  },
+  "n_62f562d1e9b48fae": {
+    "kind": "action",
+    "name": "read_index_datapoints",
+    "loc": {
+      "line": 672,
+      "column": 27,
+      "length": 1883,
+      "begin": 31861,
+      "end": 33744
+    }
+  },
+  "n_0cf81029740fe18e": {
+    "kind": "action",
+    "name": "upsert_index_datapoints",
+    "loc": {
+      "line": 716,
+      "column": 29,
+      "length": 713,
+      "begin": 33775,
+      "end": 34488
+    }
+  },
+  "n_e7d49a58d3c77f2f": {
+    "kind": "action",
+    "name": "generate_embeddings",
+    "loc": {
+      "line": 734,
+      "column": 25,
+      "length": 2838,
+      "begin": 34536,
+      "end": 37374
+    }
+  },
+  "n_d33cf8ca3eaec9b1": {
+    "kind": "triggers",
+    "name": "triggers",
+    "loc": {
+      "line": 3479,
+      "column": 12,
+      "length": 2,
+      "begin": 148552,
+      "end": 148554
+    }
+  },
+  "n_820de3b11de4a776": {
+    "kind": "pick_lists",
+    "name": "pick_lists",
+    "loc": {
+      "line": 3285,
+      "column": 14,
+      "length": 5307,
+      "begin": 141764,
+      "end": 147071
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{"type":"issue","severity":"warning","code":"dynamic_call","message":"Dynamic method dispatch via call(send) in method:execute_pipeline","loc":{"line":1477,"column":20,"length":46,"begin":65068,"end":65114},"context":{}}
+{"type":"issue","severity":"info","code":"unused_method","message":"methods.debug_embedding_response is never called","loc":{},"context":{"method":"debug_embedding_response"}}
+{"type":"issue","severity":"info","code":"unused_method","message":"methods.add_upsert_ack is never called","loc":{},"context":{"method":"add_upsert_ack"}}
+{"type":"issue","severity":"info","code":"unused_method","message":"methods.add_word_count is never called","loc":{},"context":{"method":"add_word_count"}}
+{"type":"issue","severity":"info","code":"unused_method","message":"methods.augment_vector_context is never called","loc":{},"context":{"method":"augment_vector_context"}}
+{"type":"issue","severity":"info","code":"unused_method","message":"methods.coerce_kwargs is never called","loc":{},"context":{"method":"coerce_kwargs"}}
+{"type":"issue","severity":"info","code":"unused_method","message":"methods.normalize_find_neighbors is never called","loc":{},"context":{"method":"normalize_find_neighbors"}}
+{"type":"issue","severity":"info","code":"unused_method","message":"methods.normalize_read_index_datapoints is never called","loc":{},"context":{"method":"normalize_read_index_datapoints"}}
+{"type":"issue","severity":"info","code":"unused_method","message":"methods.to_query is never called","loc":{},"context":{"method":"to_query"}}
+{"type":"issue","severity":"info","code":"unused_method","message":"methods.wrap_embeddings_vectors_v1 is never called","loc":{},"context":{"method":"wrap_embeddings_vectors_v1"}}
+{"type":"issue","severity":"info","code":"unused_method","message":"methods.wrap_embeddings_vectors is never called","loc":{},"context":{"method":"wrap_embeddings_vectors"}}
+{"type":"issue","severity":"error","code":"method_cycle","message":"methods cycle: list_publisher_models → resolve_model_version → build_endpoint_url → list_publisher_models","loc":{"line":2848,"column":12,"length":104,"begin":125386,"end":125490},"context":{"cycle":["list_publisher_models","resolve_model_version","build_endpoint_url"]}}
+{"type":"http_call","from":"method:enrich_response","to":"method:enrich_response::http#delete(_trace)","meta":{"label":"calls"}}
+{"type":"http_call","from":"method:http_request","to":"method:http_request::http#get(...)","meta":{"label":"calls"}}
+{"type":"http_call","from":"method:http_request","to":"method:http_request::http#post(...)","meta":{"label":"calls"}}
+{"type":"http_call","from":"method:http_request","to":"method:http_request::http#put(...)","meta":{"label":"calls"}}
+{"type":"http_call","from":"method:http_request","to":"method:http_request::http#delete(...)","meta":{"label":"calls"}}
+{"type":"http_call","from":"method:execute_behavior","to":"method:execute_behavior::http#delete(model)","meta":{"label":"calls"}}
+{"type":"http_call","from":"method:execute_behavior","to":"method:execute_behavior::http#delete(model_override)","meta":{"label":"calls"}}
